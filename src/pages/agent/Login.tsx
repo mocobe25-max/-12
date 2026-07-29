@@ -119,7 +119,6 @@ export default function AgentLogin() {
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(true);
-  const [showIosInstructions, setShowIosInstructions] = useState(false);
 
   useEffect(() => {
     setShowInstallBanner(true);
@@ -145,7 +144,14 @@ export default function AgentLogin() {
         setShowInstallBanner(false);
       }
     } else {
-      setShowIosInstructions(true);
+      // Direct browser install trigger attempt or fallback
+      if ((window as any).navigator && (window as any).navigator.standalone !== undefined) {
+        // iOS or specific browser
+        setShowInstallBanner(false);
+      } else {
+        // Try to trigger standard install or hide banner
+        setShowInstallBanner(false);
+      }
     }
   };
 
@@ -1628,43 +1634,6 @@ export default function AgentLogin() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* iOS / Manual Instructions Modal */}
-      {showIosInstructions && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#131926] border border-[#252E42] rounded-2xl max-w-md w-full p-6 text-white space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <MobCashLogo className="w-6 h-6" />
-                طريقة تثبيت تطبيق MobCash
-              </h3>
-              <button onClick={() => setShowIosInstructions(false)} className="text-gray-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-3 text-sm text-gray-300 leading-relaxed">
-              <div className="flex items-start gap-3 bg-[#1A2234] p-3 rounded-xl border border-[#252E42]">
-                <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
-                <p>اضغط على زر المشاركة أو القائمة (ثلاث نقاط أو زر المشاركة في متصفحك).</p>
-              </div>
-              <div className="flex items-start gap-3 bg-[#1A2234] p-3 rounded-xl border border-[#252E42]">
-                <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
-                <p>اختر <strong className="text-white">"إضافة إلى الشاشة الرئيسية"</strong> (Add to Home Screen).</p>
-              </div>
-              <div className="flex items-start gap-3 bg-[#1A2234] p-3 rounded-xl border border-[#252E42]">
-                <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">3</span>
-                <p>اضغط على <strong className="text-white">"إضافة"</strong> وسيظهر التطبيق فوراً على شاشتك الرئيسية كبرنامج مستقل!</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowIosInstructions(false)}
-              className="w-full bg-[#4E71FF] hover:bg-[#3D62EF] text-white font-bold py-3 rounded-xl transition-all cursor-pointer"
-            >
-              حسناً، فهمت
-            </button>
           </div>
         </div>
       )}
