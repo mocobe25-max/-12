@@ -9,15 +9,6 @@ export default function CreateAgent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: '',
-    country: '',
-    city: '',
-    bank_name: '',
-    commission_deposit: '',
-    commission_withdraw: '',
-  });
-
   const generateAgentId = () => {
     const randomDigits = Math.floor(10000 + Math.random() * 90000); // 5 random digits
     return `1069${randomDigits}`;
@@ -32,18 +23,37 @@ export default function CreateAgent() {
     return pass;
   };
 
+  const [formData, setFormData] = useState({
+    agent_id: '',
+    password: '',
+    full_name: '',
+    country: '',
+    city: '',
+    bank_name: '',
+    commission_deposit: '',
+    commission_withdraw: '',
+  });
+
+  const handleRegenerateId = () => {
+    setFormData(prev => ({ ...prev, agent_id: generateAgentId() }));
+  };
+
+  const handleRegeneratePassword = () => {
+    setFormData(prev => ({ ...prev, password: generatePassword() }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const newAgentId = generateAgentId();
-    const newPassword = generatePassword();
+    const newAgentId = formData.agent_id.trim();
+    const newPassword = formData.password.trim();
 
     try {
       const { data, error } = await supabase.from('agents').insert([
         {
           agent_id: newAgentId,
-          password_hash: newPassword, // In real app, hash this before saving
+          password_hash: newPassword,
           full_name: formData.full_name,
           country: formData.country,
           city: formData.city,
@@ -89,9 +99,9 @@ export default function CreateAgent() {
           state: { credentials: { agent_id: newAgentId, password_hash: newPassword } }
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating agent:', error);
-      alert(t('error_creating_agent') || 'Failed to create agent');
+      alert(error?.message || t('error_creating_agent') || 'Failed to create agent');
     } finally {
       setLoading(false);
     }
@@ -109,6 +119,46 @@ export default function CreateAgent() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">{t('agent_id') || 'الايدي (Agent ID)'}</label>
+                <button
+                  type="button"
+                  onClick={handleRegenerateId}
+                  className="text-xs text-secondary hover:underline font-medium cursor-pointer"
+                >
+                  توليد تلقائي
+                </button>
+              </div>
+              <input
+                type="text"
+                required
+                value={formData.agent_id}
+                onChange={(e) => setFormData({ ...formData, agent_id: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold font-mono"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">{t('password') || 'كلمة المرور'}</label>
+                <button
+                  type="button"
+                  onClick={handleRegeneratePassword}
+                  className="text-xs text-secondary hover:underline font-medium cursor-pointer"
+                >
+                  توليد تلقائي
+                </button>
+              </div>
+              <input
+                type="text"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold font-mono"
+              />
+            </div>
+
             <div className="col-span-1 md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('full_name')}</label>
               <input
@@ -116,7 +166,7 @@ export default function CreateAgent() {
                 required
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-gray-50"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
               />
             </div>
             
@@ -127,7 +177,7 @@ export default function CreateAgent() {
                 required
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-gray-50"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
               />
             </div>
 
@@ -138,7 +188,7 @@ export default function CreateAgent() {
                 required
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-gray-50"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
               />
             </div>
 
@@ -149,7 +199,7 @@ export default function CreateAgent() {
                 required
                 value={formData.bank_name}
                 onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-gray-50"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
               />
             </div>
 
@@ -161,7 +211,7 @@ export default function CreateAgent() {
                 required
                 value={formData.commission_deposit}
                 onChange={(e) => setFormData({ ...formData, commission_deposit: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-gray-50"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
               />
             </div>
 
@@ -173,7 +223,7 @@ export default function CreateAgent() {
                 required
                 value={formData.commission_withdraw}
                 onChange={(e) => setFormData({ ...formData, commission_withdraw: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-gray-50"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
               />
             </div>
           </div>

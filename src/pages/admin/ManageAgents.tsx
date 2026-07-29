@@ -14,6 +14,8 @@ export default function ManageAgents() {
   // Edit Modal State
   const [editingAgent, setEditingAgent] = useState<any>(null);
   const [editForm, setEditForm] = useState({
+    agent_id: '',
+    password_hash: '',
     full_name: '',
     country: '',
     city: '',
@@ -133,6 +135,8 @@ export default function ManageAgents() {
   const handleEditClick = (agent: any) => {
     setEditingAgent(agent);
     setEditForm({
+      agent_id: agent.agent_id || '',
+      password_hash: agent.password_hash || '',
       full_name: agent.full_name,
       country: agent.country,
       city: agent.city,
@@ -340,13 +344,36 @@ export default function ManageAgents() {
               </button>
             </div>
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent_id') || 'الايدي (Agent ID)'}</label>
+                  <input
+                    type="text"
+                    value={editForm.agent_id}
+                    onChange={e => setEditForm({...editForm, agent_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold font-mono text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('password') || 'كلمة المرور'}</label>
+                  <input
+                    type="text"
+                    value={editForm.password_hash}
+                    onChange={e => setEditForm({...editForm, password_hash: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold font-mono text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
                 <input
                   type="text"
                   value={editForm.full_name}
                   onChange={e => setEditForm({...editForm, full_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
                   required
                 />
               </div>
@@ -357,7 +384,7 @@ export default function ManageAgents() {
                     type="text"
                     value={editForm.country}
                     onChange={e => setEditForm({...editForm, country: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
                     required
                   />
                 </div>
@@ -367,7 +394,7 @@ export default function ManageAgents() {
                     type="text"
                     value={editForm.city}
                     onChange={e => setEditForm({...editForm, city: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
                     required
                   />
                 </div>
@@ -378,7 +405,7 @@ export default function ManageAgents() {
                   type="text"
                   value={editForm.bank_name}
                   onChange={e => setEditForm({...editForm, bank_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
                   required
                 />
               </div>
@@ -389,7 +416,7 @@ export default function ManageAgents() {
                     type="number"
                     value={editForm.commission_deposit}
                     onChange={e => setEditForm({...editForm, commission_deposit: Number(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
                     required
                   />
                 </div>
@@ -399,7 +426,7 @@ export default function ManageAgents() {
                     type="number"
                     value={editForm.commission_withdraw}
                     onChange={e => setEditForm({...editForm, commission_withdraw: Number(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
                     required
                   />
                 </div>
