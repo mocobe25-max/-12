@@ -9,14 +9,14 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=192&h=192&fit=crop",
+      "src": "https://mobcash.ink/uploads/pwas/Fe_iroyzWGOs/logo-1768467190215_512x512.webp?s=120x120",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/webp"
     },
     {
-      "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=512&h=512&fit=crop",
+      "src": "https://mobcash.ink/uploads/pwas/Fe_iroyzWGOs/logo-1768467190215_512x512.webp?s=120x120",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/webp"
     }
   ]
 }
