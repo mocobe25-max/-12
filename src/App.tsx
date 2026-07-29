@@ -19,6 +19,7 @@ import Activate from './pages/agent/Activate';
 import Review from './pages/agent/Review';
 import AgentDashboard from './pages/agent/Dashboard';
 import Suspended from './pages/agent/Suspended';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
@@ -46,6 +47,9 @@ export default function App() {
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="suspended" element={<Suspended />} />
           </Route>
+
+          {/* Catch-all 404 Route */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <InstallPrompt />
       </PageLoaderWrapper>
