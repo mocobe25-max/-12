@@ -116,17 +116,14 @@ export default function AgentLogin() {
   const [regError, setRegError] = useState('');
   const [copiedId, setCopiedId] = useState(false);
 
-  // PWA Install Prompt State
+  // PWA Install Prompt State (Disabled by default so no popup appears automatically)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(true);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   useEffect(() => {
-    setShowInstallBanner(true);
-
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowInstallBanner(true);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
