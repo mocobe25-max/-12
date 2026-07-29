@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PageLoaderWrapper } from './components/PageLoaderWrapper';
+import { InstallPrompt } from './components/InstallPrompt';
 import { AdminLayout } from './layouts/AdminLayout';
 import { AgentLayout } from './layouts/AgentLayout';
 
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="suspended" element={<Suspended />} />
           </Route>
         </Routes>
+        <InstallPrompt />
       </PageLoaderWrapper>
     </BrowserRouter>
   );

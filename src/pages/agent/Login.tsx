@@ -541,7 +541,7 @@ export default function AgentLogin() {
   if (showRegScreen) {
     return (
       <div
-        className="h-screen h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between font-sans select-none relative overflow-hidden overscroll-none"
+        className="min-h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between font-sans select-none relative overflow-y-auto"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Top Indicator Progress Bar */}
@@ -1317,7 +1317,7 @@ export default function AgentLogin() {
   if (showLoginForm) {
     return (
       <div
-        className="h-screen h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between px-6 py-4 font-sans select-none relative overflow-hidden overscroll-none"
+        className="min-h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between px-6 py-4 font-sans select-none relative overflow-y-auto"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Top Header Row with Back Button & Centered Title */}
@@ -1454,7 +1454,7 @@ export default function AgentLogin() {
   // VIEW 1: WELCOME / LANDING SPLASH SCREEN
   return (
     <div
-      className="h-screen h-[100dvh] w-full bg-[#0B0E14] text-white flex flex-col justify-between items-center px-6 py-6 relative overflow-hidden overscroll-none font-sans select-none"
+      className="min-h-[100dvh] w-full bg-[#0B0E14] text-white flex flex-col justify-between items-center px-6 py-6 relative overflow-y-auto font-sans select-none"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Background radial glow effect */}
