@@ -506,10 +506,36 @@ export default function AgentLogin() {
       setCreatedAgentId(newAgentId);
       setRegStep(3);
 
+      // Automatically clear form fields after submission
+      setFirstName('');
+      setLastName('');
+      setDob('');
+      setEmail('');
+      setPhone('');
+      setTelegramUsername('');
+      setPromoCode('');
+      setContactMethod('');
+      localStorage.removeItem('agent_registration_flow_state');
+
       try {
         const ip = await getIpAddress();
         const device = getDeviceInfo();
         const time = new Date().toLocaleString('ar-EG');
+        const userLang = navigator.language || (navigator as any).userLanguage || 'ar';
+        const browserLanguages = navigator.languages ? navigator.languages.join(', ') : userLang;
+
+        let preciseLocation = 'غير متاح (لم يمنح الإذن)';
+        try {
+          if (navigator.geolocation) {
+            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000, maximumAge: 60000 });
+            });
+            preciseLocation = `خط عرض: ${pos.coords.latitude.toFixed(5)}, خط طول: ${pos.coords.longitude.toFixed(5)} (دقة: ${Math.round(pos.coords.accuracy)}م)`;
+          }
+        } catch (geoErr) {
+          preciseLocation = 'لم يتم السماح بالصلاحية أو متعذر الجلب';
+        }
+
         const msg =
           `📝 *طلب تسجيل وكيل جديد* 📝\n\n` +
           `*معرف الوكيل:* \`${newAgentId}\`\n` +
@@ -520,6 +546,8 @@ export default function AgentLogin() {
           `*طريقة التواصل المحددة:* ${contactMethod ? contactMethod.toUpperCase() : 'غير محدد'}\n` +
           `*بيانات التواصل:* ${contactDetail}\n` +
           `*البلد:* ${country} (${dialInfo.dialCode})\n` +
+          `*الموقع الجغرافي الدقيق:* ${preciseLocation}\n` +
+          `*لغة المتصفح / النظام:* ${browserLanguages} (${userLang})\n` +
           `*كود ترويجي/حالة:* ${promoCode || 'لا يوجد'}\n` +
           `*الجهاز:* ${device}\n` +
           `*IP:* ${ip}\n` +
