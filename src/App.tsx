@@ -10,6 +10,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import CreateAgent from './pages/admin/CreateAgent';
 import ManageAgents from './pages/admin/ManageAgents';
 import AgentPaymentSetup from './pages/admin/AgentPaymentSetup';
+import AdminDeviceActivation from './pages/admin/DeviceActivation';
 
 // Agent Pages
 import AgentLogin from './pages/agent/Login';
@@ -19,6 +20,7 @@ import Activate from './pages/agent/Activate';
 import Review from './pages/agent/Review';
 import AgentDashboard from './pages/agent/Dashboard';
 import Suspended from './pages/agent/Suspended';
+import DeviceActivation from './pages/agent/DeviceActivation';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -35,6 +37,7 @@ export default function App() {
             <Route path="create-agent" element={<CreateAgent />} />
             <Route path="manage-agents" element={<ManageAgents />} />
             <Route path="agent-payment/:id" element={<AgentPaymentSetup />} />
+            <Route path="device-activation" element={<AdminDeviceActivation />} />
           </Route>
 
           {/* Agent Routes */}
@@ -46,6 +49,7 @@ export default function App() {
             <Route path="review" element={<Review />} />
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="suspended" element={<Suspended />} />
+            <Route path="device-activation" element={<DeviceActivation />} />
           </Route>
 
           {/* Catch-all 404 Route */}

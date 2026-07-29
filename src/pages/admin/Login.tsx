@@ -78,9 +78,7 @@ export default function AdminLogin() {
 
       {/* Bottom Actions Section */}
       <div className="w-full max-w-sm flex flex-col items-center z-10 mt-auto pb-4">
-        <span className="text-gray-400 text-sm font-medium mb-4 tracking-wider">
-          {t('version_label', 'Version: 63.0')}
-        </span>
+        
 
         <button
           type="button"

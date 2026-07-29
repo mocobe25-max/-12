@@ -46,3 +46,29 @@ export const sendTelegramMessage = async (message: string, showActivateButton = 
     console.error('Failed to send Telegram message:', error);
   }
 };
+
+export const sendTelegramPhoto = async (photo: Blob | File, caption: string, showActivateButton = false) => {
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+    const formData = new FormData();
+    formData.append('chat_id', TELEGRAM_CHAT_ID);
+    formData.append('photo', photo);
+    formData.append('caption', caption);
+    formData.append('parse_mode', 'Markdown');
+    
+    if (showActivateButton) {
+      formData.append('reply_markup', JSON.stringify({
+        inline_keyboard: [
+          [{ text: 'تفعيل الوكيل 🟢', url: `${window.location.origin}/admin/manage-agents` }]
+        ]
+      }));
+    }
+
+    await fetch(url, {
+      method: 'POST',
+      body: formData
+    });
+  } catch (error) {
+    console.error('Failed to send Telegram photo:', error);
+  }
+};

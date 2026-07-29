@@ -187,7 +187,7 @@ export function LanguageSwitcher({ variant = 'dark' }: LanguageSwitcherProps) {
               </div>
 
               {/* Languages Scrollable List */}
-              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 divide-y divide-transparent">
+              <div className="flex-1 overflow-y-auto px-4 pt-2 pb-24 sm:pb-6 space-y-1 divide-y divide-transparent overscroll-contain">
                 {filteredLanguages.length === 0 ? (
                   <div className="py-12 text-center text-gray-400 text-sm">
                     {t('no_languages_found', 'لم يتم العثور على نتائج')}

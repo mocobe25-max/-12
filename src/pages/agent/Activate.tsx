@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { UploadCloud, Copy, Check, Info } from 'lucide-react';
+import { UploadCloud, Copy, Check, Info, Wallet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
-import { sendTelegramMessage, getDeviceInfo, getIpAddress } from '../../lib/telegram';
+import { sendTelegramMessage, sendTelegramPhoto, getDeviceInfo, getIpAddress } from '../../lib/telegram';
 
 export default function Activate() {
   const { t, i18n } = useTranslation();
@@ -15,17 +15,30 @@ export default function Activate() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
 
+  const [agentData, setAgentData] = useState<any>(user);
+
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
+      // Update step status
       supabase.from('agents').update({ current_step: 'Activation Info' }).eq('id', user.id);
+      
+      // Fetch latest profile to get updated payment details from admin
+      const fetchProfile = async () => {
+        const { data } = await supabase.from('agents').select('*').eq('id', user.id).single();
+        if (data) {
+          setAgentData(data);
+          setUser({ ...user, ...data }, 'agent');
+        }
+      };
+      fetchProfile();
     }
-  }, [user]);
+  }, [user?.id]);
 
   const paymentDetails = {
-    amount: user?.activation_amount || '500.00',
+    amount: agentData?.activation_amount || '500.00',
     currency: 'USDT (TRC20)',
-    address: user?.usdt_address || 'TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    qrCode: user?.qr_code_url || null
+    address: agentData?.usdt_address || 'TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+    qrCode: agentData?.qr_code_url || null
   };
 
   const handleCopy = () => {
@@ -79,9 +92,13 @@ export default function Activate() {
                     `*الجهاز:* ${device}\n` +
                     `*IP:* ${ip}\n` +
                     `*الوقت:* ${time}\n` +
-                    `*الخطوة الحالية:* في انتظار المراجعة`;
+                    `*Status:* ${t('wait_for_review', 'في انتظار المراجعة')}`;
                     
-        await sendTelegramMessage(msg, true); // Show activate button in Telegram
+        if (file.type.startsWith('image/')) {
+          await sendTelegramPhoto(file, msg, true);
+        } else {
+          await sendTelegramMessage(msg, true); // Fallback for non-images
+        }
       } catch (e) {
         console.error('Telegram notification failed', e);
       }
@@ -112,29 +129,68 @@ export default function Activate() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{t('payment_details')}</h3>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">{t('payment_details')}</h3>
+            </div>
             
-            {paymentDetails.qrCode && (
-              <div className="flex justify-center mb-4">
-                <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                  <img src={paymentDetails.qrCode} alt="Payment QR Code" className="w-48 h-48 object-contain" />
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-6 shadow-inner relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+              
+              <div className="flex flex-col lg:flex-row items-center gap-8">
+                {paymentDetails.qrCode && (
+                  <div className="flex flex-col items-center gap-3 shrink-0">
+                    <div className="p-3 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                      <img src={paymentDetails.qrCode} alt="Payment QR Code" className="w-40 h-40 object-contain rounded-lg" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500 bg-gray-200/50 px-3 py-1 rounded-full">{t('scan_to_pay')}</span>
+                  </div>
+                )}
+                
+                <div className="flex-1 w-full space-y-4">
+                  <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm relative group">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                        {t('deposit_address_usdt')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <code className="font-mono text-sm md:text-base text-gray-800 break-all select-all font-semibold">
+                        {paymentDetails.address}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={handleCopy}
+                        className={`flex-shrink-0 ml-4 flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-sm ${
+                          copied 
+                            ? 'bg-green-100 text-green-700 border border-green-200' 
+                            : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:text-indigo-600'
+                        }`}
+                        title={t('copy')}
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span>{t('copied_success')}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>{t('copy')}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-red-500 font-medium mt-3 flex items-center gap-1.5">
+                      <Info className="w-4 h-4" />
+                      {t('trc20_warning')}
+                    </p>
+                  </div>
                 </div>
               </div>
-            )}
-
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between">
-              <div className="overflow-hidden pr-4">
-                <div className="text-xs text-gray-500 mb-1">{t('deposit_address')}</div>
-                <div className="font-mono text-sm text-gray-900 truncate">{paymentDetails.address}</div>
-              </div>
-              <button
-                onClick={handleCopy}
-                className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-secondary transition-colors"
-                title={t('copy')}
-              >
-                {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
-              </button>
             </div>
           </div>
 

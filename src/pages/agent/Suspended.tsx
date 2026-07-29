@@ -35,8 +35,8 @@ export default function Suspended() {
           <p className="text-sm text-gray-600">
             {t('contact_support_desc_1')}<span className="font-mono font-medium">{user?.agent_id}</span>{t('contact_support_desc_2')}
           </p>
-          <a href="mailto:support@temcash1x.com" className="mt-4 inline-block text-sm font-medium text-secondary hover:text-primary transition-colors">
-            support@temcash1x.com
+          <a href="mailto:manager@1xbetagent.shop" className="mt-4 inline-block text-sm font-medium text-secondary hover:text-primary transition-colors">
+            manager@1xbetagent.shop
           </a>
         </div>
       </div>

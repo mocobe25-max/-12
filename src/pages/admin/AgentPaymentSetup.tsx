@@ -58,11 +58,16 @@ export default function AgentPaymentSetup() {
     setLoading(true);
 
     try {
-      // In a real app, upload the QR code file to Supabase Storage
-      // const { data: uploadData, error: uploadError } = await supabase.storage.from('qrcodes').upload(...)
-      // const qrCodeUrl = uploadData.path;
+      let qrCodeUrl = agent?.qr_code_url || '';
       
-      const qrCodeUrl = file ? URL.createObjectURL(file) : ''; // Mock URL for now
+      if (file) {
+        qrCodeUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+        });
+      }
 
       const { error } = await supabase
         .from('agents')

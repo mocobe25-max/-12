@@ -27,6 +27,7 @@ export default function CreateAgent() {
     agent_id: '',
     password: '',
     full_name: '',
+    agency_name: '',
     country: '',
     city: '',
     bank_name: '',
@@ -54,7 +55,7 @@ export default function CreateAgent() {
         {
           agent_id: newAgentId,
           password_hash: newPassword,
-          full_name: formData.full_name,
+          full_name: formData.agency_name ? `${formData.full_name} (${formData.agency_name})` : formData.full_name,
           country: formData.country,
           city: formData.city,
           bank_name: formData.bank_name,
@@ -169,6 +170,17 @@ export default function CreateAgent() {
                 className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
               />
             </div>
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('agency_name', 'اسم الوكالة')}</label>
+              <input
+                type="text"
+                value={formData.agency_name}
+                onChange={(e) => setFormData({ ...formData, agency_name: e.target.value })}
+                placeholder={t('agency_name_placeholder', 'اختياري')}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
+              />
+            </div>
+
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('country')}</label>

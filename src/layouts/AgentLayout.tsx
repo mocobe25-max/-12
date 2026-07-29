@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/auth';
 import { Shield, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
+import { MobCashLogo } from '../components/MobCashLogo';
 
 export function AgentLayout() {
   const { user, role, logout } = useAuthStore();
@@ -27,7 +28,7 @@ export function AgentLayout() {
       navigate('/agent/activation-info');
     } else if (status === 'under_review' && path !== '/agent/review') {
       navigate('/agent/review');
-    } else if (status === 'active' && path !== '/agent/dashboard') {
+    } else if (status === 'active' && path !== '/agent/dashboard' && path !== '/agent/device-activation') {
       navigate('/agent/dashboard');
     } else if (status === 'suspended' && path !== '/agent/suspended') {
       navigate('/agent/suspended');
@@ -53,8 +54,8 @@ export function AgentLayout() {
       <header className="bg-primary text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-secondary" />
-            <span className="text-xl font-bold tracking-wider">TemCash 1x</span>
+            <MobCashLogo className="w-10 h-10" />
+            <span className="text-xl font-bold tracking-wider">MobCash</span>
           </div>
           
           <div className="flex items-center gap-4">

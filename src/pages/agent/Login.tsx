@@ -343,7 +343,7 @@ export default function AgentLogin() {
         if (status === 'pending') navigate('/agent/verify');
         else if (status === 'verified') navigate('/agent/activation-info');
         else if (status === 'under_review') navigate('/agent/review');
-        else if (status === 'active') navigate('/agent/dashboard');
+        else if (status === 'active') navigate('/agent/device-activation');
         else if (status === 'suspended') navigate('/agent/suspended');
         return;
       }
@@ -1399,7 +1399,7 @@ export default function AgentLogin() {
           </button>
 
           <h2 className="text-2xl font-bold text-white tracking-wide text-center flex-1 me-4">
-            {t('login', 'Log in')}
+            {t('login', 'تسجيل الدخول')}
           </h2>
 
           <div className="w-6" />
@@ -1488,9 +1488,7 @@ export default function AgentLogin() {
 
         {/* Bottom Area with Version & Primary Button matching Screenshot */}
         <div className="w-full max-w-md mx-auto pb-3 pt-2 space-y-2.5 shrink-0">
-          <div className="text-start ps-1 text-gray-400 text-xs sm:text-sm font-medium tracking-wide">
-            {t('version_label', 'Version: 63.0')}
-          </div>
+          
 
           <button
             type="submit"
@@ -1544,9 +1542,7 @@ export default function AgentLogin() {
       {/* Bottom Actions Section */}
       <div className="w-full max-w-sm flex flex-col items-center z-10 mt-auto pb-4">
         {/* Version Tag */}
-        <span className="text-gray-400 text-sm font-medium mb-4 tracking-wider">
-          {t('version_label', 'Version: 63.0')}
-        </span>
+        
 
         {/* Primary Log in Button */}
         <button
@@ -1557,7 +1553,7 @@ export default function AgentLogin() {
           }}
           className="w-full bg-[#4E71FF] hover:bg-[#3D62EF] active:bg-[#3153DC] text-white font-bold py-4 px-6 rounded-2xl text-lg sm:text-xl shadow-lg shadow-blue-600/25 transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center justify-center mb-3"
         >
-          {t('login', 'Log in')}
+          {t('login', 'تسجيل الدخول')}
         </button>
 
         {/* Sub-label */}
@@ -1575,7 +1571,7 @@ export default function AgentLogin() {
           }}
           className="w-full bg-[#131926] hover:bg-[#1A2234] border border-[#252E42] text-[#4E71FF] hover:text-white font-bold py-4 px-6 rounded-2xl text-lg sm:text-xl hover:border-[#4E71FF] transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center justify-center mb-6"
         >
-          {t('registration', 'Registration')}
+          {t('registration', 'تسجيل')}
         </button>
 
         {/* Language Switcher Button */}

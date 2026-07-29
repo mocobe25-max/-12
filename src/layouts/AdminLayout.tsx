@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
-import { Shield, Users, PlusCircle, LogOut, LayoutDashboard, Menu, X } from 'lucide-react';
+import { Shield, Users, PlusCircle, LogOut, LayoutDashboard, Menu, X, MonitorSmartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { MobCashLogo } from '../components/MobCashLogo';
 
 export function AdminLayout() {
   const { user, role, logout } = useAuthStore();
@@ -25,6 +26,7 @@ export function AdminLayout() {
     { path: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard') },
     { path: '/admin/create-agent', icon: PlusCircle, label: t('create_agent') },
     { path: '/admin/manage-agents', icon: Users, label: t('manage_agents') },
+    { path: '/admin/device-activation', icon: MonitorSmartphone, label: t('device_activation', 'تفعيل الأجهزة') },
   ];
 
   const isRtl = ['ar', 'ur', 'fa'].includes(i18n.language?.split('-')[0] || 'en');
@@ -34,8 +36,8 @@ export function AdminLayout() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 start-0 end-0 h-16 bg-primary text-white flex items-center justify-between px-4 z-30">
         <div className="flex items-center gap-3">
-          <Shield className="w-6 h-6 text-secondary" />
-          <span className="text-lg font-bold tracking-wider">TemCash 1x</span>
+          <MobCashLogo className="w-8 h-8" />
+          <span className="text-lg font-bold tracking-wider">MobCash</span>
         </div>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
@@ -52,8 +54,8 @@ export function AdminLayout() {
       )}>
         <div className="p-6 hidden lg:flex items-center justify-between border-b border-white/10">
           <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-secondary" />
-            <span className="text-xl font-bold tracking-wider">TemCash 1x</span>
+            <MobCashLogo className="w-10 h-10" />
+            <span className="text-xl font-bold tracking-wider">MobCash</span>
           </div>
         </div>
         

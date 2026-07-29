@@ -21,7 +21,10 @@ export default function ManageAgents() {
     city: '',
     bank_name: '',
     commission_deposit: 0,
-    commission_withdraw: 0
+    commission_withdraw: 0,
+    activation_amount: '',
+    usdt_address: '',
+    qr_code_url: ''
   });
 
   // Delete Modal State
@@ -142,7 +145,10 @@ export default function ManageAgents() {
       city: agent.city,
       bank_name: agent.bank_name,
       commission_deposit: agent.commission_deposit,
-      commission_withdraw: agent.commission_withdraw
+      commission_withdraw: agent.commission_withdraw,
+      activation_amount: agent.activation_amount || '',
+      usdt_address: agent.usdt_address || '',
+      qr_code_url: agent.qr_code_url || ''
     });
   };
 
@@ -343,7 +349,7 @@ export default function ManageAgents() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[75vh]">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent_id') || 'الايدي (Agent ID)'}</label>
@@ -431,6 +437,49 @@ export default function ManageAgents() {
                   />
                 </div>
               </div>
+              
+              {/* Payment Details Section */}
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h4 className="font-bold text-gray-900 mb-4">{t('payment_details')}</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('activation_amount_usdt')}</label>
+                    <input
+                      type="text"
+                      value={editForm.activation_amount}
+                      onChange={e => setEditForm({...editForm, activation_amount: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold font-mono"
+                      placeholder="e.g. 500.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('deposit_address_usdt')}</label>
+                    <input
+                      type="text"
+                      value={editForm.usdt_address}
+                      onChange={e => setEditForm({...editForm, usdt_address: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold font-mono text-sm"
+                      placeholder="T..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('qr_code_image')}</label>
+                    <input
+                      type="text"
+                      value={editForm.qr_code_url}
+                      onChange={e => setEditForm({...editForm, qr_code_url: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold text-sm"
+                      placeholder="https://..."
+                    />
+                    {editForm.qr_code_url && (
+                      <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg inline-block">
+                        <img src={editForm.qr_code_url} alt="QR Code Preview" className="w-20 h-20 object-contain" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-4 flex justify-end gap-3">
                 <button
                   type="button"
