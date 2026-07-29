@@ -118,22 +118,18 @@ export default function AgentLogin() {
 
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
   const [showIosInstructions, setShowIosInstructions] = useState(false);
 
   useEffect(() => {
+    setShowInstallBanner(true);
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallBanner(true);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile && !isStandalone) {
-      setShowInstallBanner(true);
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -1583,29 +1579,55 @@ export default function AgentLogin() {
         <LanguageSwitcher variant="dark" />
       </div>
 
-      {/* PWA Install Banner Popup */}
+      {/* PWA Install Modal Popup matching screenshot */}
       {showInstallBanner && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto bg-[#131926] border border-[#252E42] shadow-2xl rounded-2xl p-4 flex items-center gap-4 animate-bounce-in">
-          <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center shrink-0 border border-blue-500/30">
-            <MobCashLogo className="w-8 h-8" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-white font-bold text-sm sm:text-base">تثبيت تطبيق MobCash</h3>
-            <p className="text-gray-300 text-xs sm:text-sm truncate">ثبت التطبيق على هاتفك للوصول المباشر والسريع</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={handleInstallClick}
-              className="bg-[#4E71FF] hover:bg-[#3D62EF] text-white text-xs sm:text-sm font-bold px-3 py-2 rounded-xl shadow-md transition-all cursor-pointer whitespace-nowrap"
-            >
-              تثبيت الآن
-            </button>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#131926] border border-[#252E42] rounded-3xl max-w-sm w-full p-6 text-white shadow-2xl relative animate-scale-in">
             <button
               onClick={() => setShowInstallBanner(false)}
-              className="text-gray-400 hover:text-white p-1"
+              className="absolute top-4 left-4 text-gray-400 hover:text-white p-1 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
+            <div className="text-center space-y-4">
+              <h3 className="text-xl font-bold text-white mb-2">تثبيت التطبيق</h3>
+              
+              <div className="flex items-center gap-3 bg-[#1A2234] p-4 rounded-2xl border border-[#252E42]">
+                <div className="w-14 h-14 rounded-2xl bg-blue-600/20 flex items-center justify-center shrink-0 border border-blue-500/30 overflow-hidden shadow-inner">
+                  <img 
+                    src="https://businessweb-mobi.com/brands/default/install-app-logo.svg?v=ca3de33b" 
+                    alt="MobCash Logo" 
+                    className="w-10 h-10 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+                <div className="text-right min-w-0">
+                  <div className="font-bold text-white text-base truncate">MobCash</div>
+                  <div className="text-gray-400 text-xs truncate">businessweb-mobi.com</div>
+                </div>
+              </div>
+
+              <p className="text-gray-300 text-sm leading-relaxed text-right">
+                ثبت تطبيق MobCash على هاتفك الذكي أو جهازك اللوحي أو حاسوبك. يمكنك دائمًا القيام بذلك لاحقًا في قائمة "الملف الشخصي".
+              </p>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={handleInstallClick}
+                  className="flex-1 bg-[#4E71FF] hover:bg-[#3D62EF] text-white font-bold py-3 px-4 rounded-2xl shadow-lg shadow-blue-600/30 transition-all cursor-pointer text-center"
+                >
+                  تثبيت
+                </button>
+                <button
+                  onClick={() => setShowInstallBanner(false)}
+                  className="flex-1 bg-[#1A2234] hover:bg-[#252E42] text-gray-300 hover:text-white font-medium py-3 px-4 rounded-2xl border border-[#252E42] transition-all cursor-pointer text-center"
+                >
+                  ليس الآن
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
