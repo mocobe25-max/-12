@@ -1,16 +1,16 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
-import { Shield, LogOut } from 'lucide-react';
+import { LogOut, ShieldCheck, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '../lib/utils';
 import { MobCashLogo } from '../components/MobCashLogo';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 export function AgentLayout() {
   const { user, role, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const { t, i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   useEffect(() => {
     if (!user || role !== 'agent') {
@@ -24,8 +24,8 @@ export function AgentLayout() {
 
     if (status === 'pending' && path !== '/agent/verify') {
       navigate('/agent/verify');
-    } else if (status === 'verified' && path !== '/agent/activation-info' && path !== '/agent/activate') {
-      navigate('/agent/activation-info');
+    } else if (status === 'verified' && path !== '/agent/activate') {
+      navigate('/agent/activate');
     } else if (status === 'under_review' && path !== '/agent/review') {
       navigate('/agent/review');
     } else if (status === 'active' && path !== '/agent/dashboard' && path !== '/agent/device-activation') {
@@ -37,88 +37,53 @@ export function AgentLayout() {
 
   if (!user || role !== 'agent') return null;
 
-  const steps = [
-    { id: 'pending', label: t('verify_info'), index: 1 },
-    { id: 'verified', label: t('activation'), index: 2 },
-    { id: 'under_review', label: t('review'), index: 3 },
-    { id: 'active', label: t('active'), index: 4 },
-  ];
-
-  const currentStepIndex = steps.find(s => s.id === user.status)?.index || 1;
-
   const isRtl = ['ar', 'ur', 'fa'].includes(i18n.language?.split('-')[0] || 'en');
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* Topbar */}
-      <header className="bg-primary text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <MobCashLogo className="w-10 h-10" />
-            <span className="text-xl font-bold tracking-wider">MobCash</span>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950 font-sans" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* Top Header with MobCash Logo, Agent ID, and Logout */}
+      <header className="bg-slate-900/95 border-b border-slate-800/80 backdrop-blur-xl sticky top-0 z-40 shadow-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+          {/* Logo Only */}
+          <div className="flex items-center gap-3 shrink-0">
+            <MobCashLogo className="w-9 h-9 sm:w-11 sm:h-11 shadow-lg rounded-xl ring-2 ring-amber-500/20" />
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-white/70">
-              ID: <span className="font-mono text-white">{user.agent_id}</span>
+          {/* Right Controls: ID & Logout */}
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            {/* Agent ID */}
+            <div className="px-3 py-1.5 bg-slate-800/90 border border-slate-700/80 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-slate-200 shadow-inner">
+              <UserCheck className="w-4 h-4 text-amber-400" />
+              <span className="opacity-75 hidden sm:inline">{t('agent_id')}:</span>
+              <strong className="font-mono text-amber-400 font-extrabold tracking-wider">{user.agent_id}</strong>
             </div>
+
+            {/* Logout Icon Button */}
             <button
               onClick={() => {
                 logout();
                 navigate('/agent/login');
               }}
-              className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-slate-300 hover:text-white bg-slate-800/90 hover:bg-slate-700/90 px-3 py-2 rounded-xl transition-all text-xs font-bold cursor-pointer border border-slate-700 shadow-sm hover:border-slate-600"
+              title={t('logout')}
             >
-              <LogOut className="w-5 h-5" />
-              <span className="hidden sm:inline">{t('logout')}</span>
+              <LogOut className="w-4 h-4 text-rose-400" />
+              <span className="hidden md:inline">{t('logout')}</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Progress Bar (only show if not suspended) */}
-      {user.status !== 'suspended' && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-4xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between relative">
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 rounded-full z-0"></div>
-              <div 
-                className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-secondary rounded-full z-0 transition-all duration-500"
-                style={{ width: `${((currentStepIndex - 1) / 3) * 100}%` }}
-              ></div>
-              
-              {steps.map((step) => {
-                const isCompleted = currentStepIndex > step.index;
-                const isCurrent = currentStepIndex === step.index;
-                
-                return (
-                  <div key={step.id} className="relative z-10 flex flex-col items-center gap-2">
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors",
-                      isCompleted ? "bg-secondary text-white" : 
-                      isCurrent ? "bg-secondary text-white ring-4 ring-secondary/20" : 
-                      "bg-gray-200 text-gray-500"
-                    )}>
-                      {step.index}
-                    </div>
-                    <span className={cn(
-                      "text-xs font-medium absolute -bottom-6 w-24 text-center",
-                      isCurrent ? "text-primary" : "text-gray-500"
-                    )}>
-                      {step.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <main className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 mt-6">
+      {/* Main Content View (No steps bar) */}
+      <main className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
         <Outlet />
       </main>
+
+      {/* Modern Footer */}
+      <footer className="border-t border-slate-800/60 py-4 text-center text-xs text-slate-500 font-medium">
+        MobCash Partner Portal &copy; {new Date().getFullYear()} &bull; جميع الحقوق محفوظة
+      </footer>
     </div>
   );
 }
+

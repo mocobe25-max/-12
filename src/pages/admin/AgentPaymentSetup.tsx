@@ -19,7 +19,7 @@ export default function AgentPaymentSetup() {
   );
   
   const [formData, setFormData] = useState({
-    activation_amount: '500',
+    activation_amount: '',
     usdt_address: '',
   });
   const [file, setFile] = useState<File | null>(null);
@@ -40,6 +40,12 @@ export default function AgentPaymentSetup() {
         
       if (error) throw error;
       setAgent(data);
+      if (data) {
+        setFormData({
+          activation_amount: data.activation_amount || '500',
+          usdt_address: data.usdt_address || '',
+        });
+      }
     } catch (error) {
       console.error('Error fetching agent:', error);
     }
@@ -123,35 +129,6 @@ export default function AgentPaymentSetup() {
           <p className="text-gray-500">{t('setup_payment_for')} {agent.full_name}</p>
         </div>
       </div>
-
-      {credentials && (
-        <div className="p-6 bg-blue-50 border border-blue-100 rounded-2xl mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-blue-900">{t('credentials_generated')}</h3>
-            <button
-              onClick={copyCredentials}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors border border-blue-200 text-sm font-medium"
-            >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? t('copied') : t('copy')}
-            </button>
-          </div>
-          <div className="space-y-3 font-mono text-sm">
-            <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-blue-100">
-              <span className="text-gray-500">{t('agent_id')}</span>
-              <span className="font-bold text-gray-900">{credentials.agent_id}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-blue-100">
-              <span className="text-gray-500">{t('password')}</span>
-              <span className="font-bold text-gray-900">{credentials.password_hash}</span>
-            </div>
-          </div>
-          <p className="mt-4 text-sm text-blue-600 flex items-center gap-2">
-            <Shield className="w-4 h-4" />
-            {t('save_credentials_warning')}
-          </p>
-        </div>
-      )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -43,21 +43,23 @@ export default function Review() {
   }, [user, setUser, navigate]);
 
   return (
-    <div className="max-w-md mx-auto mt-12">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-        <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Clock className="w-10 h-10 text-yellow-500 animate-pulse" />
+    <div className="max-w-md mx-auto mt-12 pb-12">
+      <div className="bg-slate-900/90 rounded-3xl shadow-2xl border border-slate-800 p-8 text-center relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        
+        <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+          <Clock className="w-10 h-10 text-amber-400 animate-pulse" />
         </div>
         
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('status_under_review')}</h1>
+        <h1 className="text-2xl font-black text-white mb-3">{t('status_under_review', 'الطلب قيد المراجعة والتدقيق')}</h1>
         
-        <p className="text-gray-600 mb-8 leading-relaxed">
-          {t('review_message')}
+        <p className="text-slate-300 mb-8 text-sm leading-relaxed font-medium">
+          {t('review_message', 'تم استلام إثبات الدفع والبيانات بنجاح. يتم الآن التحقق بواسطة إدارة المنظمة وتفعيل حسابك فور الانتهاء.')}
         </p>
         
-        <div className="inline-flex items-center justify-center px-4 py-2 bg-gray-50 rounded-full border border-gray-200 text-sm text-gray-500 font-medium">
-          <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-ping"></div>
-          {t('checking_updates')}
+        <div className="inline-flex items-center justify-center px-4 py-2 bg-slate-950 rounded-full border border-slate-800 text-xs text-amber-400 font-bold tracking-wider">
+          <div className="w-2 h-2 bg-amber-400 rounded-full ms-2 me-2 animate-ping"></div>
+          {t('checking_updates', 'جاري التحديث التلقائي للحالة...')}
         </div>
       </div>
     </div>

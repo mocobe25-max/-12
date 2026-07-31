@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, Search, Edit2, Trash2, ShieldAlert, Eye, EyeOff, X } from 'lucide-react';
+import { Users, Search, Edit2, Trash2, ShieldAlert, Eye, EyeOff, X, Clock, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { sendTelegramMessage } from '../../lib/telegram';
 
@@ -22,6 +22,7 @@ export default function ManageAgents() {
     bank_name: '',
     commission_deposit: 0,
     commission_withdraw: 0,
+    agent_type: 'mobcash',
     activation_amount: '',
     usdt_address: '',
     qr_code_url: ''
@@ -113,6 +114,25 @@ export default function ManageAgents() {
     }
   };
 
+  const resetDepositTimer = async (agent: any) => {
+    try {
+      // Mark as PENDING_LOGIN so countdown only starts when the agent actually logs in / opens the portal
+      await supabase
+        .from('agents')
+        .update({ deposit_timer_reset_at: 'PENDING_LOGIN' })
+        .eq('id', agent.id);
+
+      // Reset local flags
+      localStorage.removeItem(`deposit_timer_start_${agent.id}`);
+      localStorage.setItem(`deposit_timer_pending_${agent.id}`, 'true');
+
+      alert(`✅ تم تجديد مهلة الإيداع للوكيل: ${agent.full_name || agent.agent_id}\nوسيبدأ عد الـ 10 دقائق فور تسجيل الوكيل لدخوله.`);
+      fetchAgents();
+    } catch (error) {
+      console.error('Error resetting timer:', error);
+    }
+  };
+
   const confirmDelete = (id: string) => {
     setAgentToDelete(id);
   };
@@ -146,6 +166,7 @@ export default function ManageAgents() {
       bank_name: agent.bank_name,
       commission_deposit: agent.commission_deposit,
       commission_withdraw: agent.commission_withdraw,
+      agent_type: agent.agent_type || 'mobcash',
       activation_amount: agent.activation_amount || '',
       usdt_address: agent.usdt_address || '',
       qr_code_url: agent.qr_code_url || ''
@@ -259,7 +280,16 @@ export default function ManageAgents() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{agent.full_name}</div>
-                    <div className="text-sm text-gray-500">{agent.bank_name}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-500">{agent.bank_name}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        agent.agent_type === 'bank_transfer'
+                          ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      }`}>
+                        {agent.agent_type === 'bank_transfer' ? '🏦 تحويل مصرفي' : '🟢 وكيل موبيكاش'}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{agent.city}</div>
@@ -287,14 +317,24 @@ export default function ManageAgents() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-end text-sm font-medium">
                     <button 
+                      onClick={() => resetDepositTimer(agent)}
+                      className="text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 p-2 rounded-lg transition-colors inline-flex items-center gap-1 text-xs font-bold me-1 cursor-pointer"
+                      title="إعادة فتح مهلة الإيداع 10 دقائق"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span className="hidden lg:inline">تجديد المهلة (10د)</span>
+                    </button>
+                    <button 
                       onClick={() => handleEditClick(agent)}
                       className="text-secondary hover:text-primary transition-colors p-2"
+                      title={t('edit', 'تعديل')}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => confirmDelete(agent.id)}
                       className="text-red-600 hover:text-red-900 transition-colors p-2 ml-2"
+                      title={t('delete', 'حذف')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -350,6 +390,35 @@ export default function ManageAgents() {
               </button>
             </div>
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[75vh]">
+              {/* Agent Type */}
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">نوع الوكيل</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({...editForm, agent_type: 'mobcash'})}
+                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer text-xs font-bold ${
+                      editForm.agent_type === 'mobcash'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    🟢 وكيل موبيكاش (بدون محفظة)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditForm({...editForm, agent_type: 'bank_transfer'})}
+                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer text-xs font-bold ${
+                      editForm.agent_type === 'bank_transfer'
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    🏦 وكيل تحويل مصرفي
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('agent_id') || 'الايدي (Agent ID)'}</label>
