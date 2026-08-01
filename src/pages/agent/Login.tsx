@@ -1518,9 +1518,6 @@ export default function AgentLogin() {
       className="h-[100dvh] max-h-[100dvh] w-full bg-[#0B0E14] text-white flex flex-col justify-between items-center px-6 py-6 relative overflow-hidden overscroll-none font-sans select-none"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      {/* Background radial glow effect */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-
       {/* Top Branding Section */}
       <div className="flex-1 flex flex-col justify-center items-center text-center z-10 my-auto">
         {/* MobCash Logo Icon */}
@@ -1532,16 +1529,18 @@ export default function AgentLogin() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-gray-300/90 text-lg sm:text-xl font-medium tracking-wide">
-          {t('make_money_with_us', 'ربح المال معنا')}
+        <p className="text-gray-300 text-xl font-medium tracking-wide">
+          {t('make_money_with_us', 'اربح معنا')}
         </p>
       </div>
 
       {/* Bottom Actions Section */}
-      <div className="w-full max-w-sm flex flex-col items-center z-10 mt-auto pb-4">
-        {/* Version Tag */}
-        <div className="text-xs text-[#4E71FF]/90 font-mono font-bold tracking-wider mb-3 px-3.5 py-1 bg-[#131926] border border-[#252E42] rounded-full shadow-inner">
-          {t('version_label', 'الإصدار: 63.0')}
+      <div className="w-full max-w-sm flex flex-col items-center z-10 mt-auto pb-2">
+        {/* Version Tag (Far left above primary button) */}
+        <div className="w-full flex justify-start mb-3 px-1" dir="ltr">
+          <span className="text-sm text-gray-400 font-sans font-normal">
+            Version: 63.0
+          </span>
         </div>
 
         {/* Primary Log in Button */}
@@ -1551,14 +1550,14 @@ export default function AgentLogin() {
             setError('');
             setShowLoginForm(true);
           }}
-          className="w-full bg-[#4E71FF] hover:bg-[#3D62EF] active:bg-[#3153DC] text-white font-bold py-4 px-6 rounded-2xl text-lg sm:text-xl shadow-lg shadow-blue-600/25 transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center justify-center mb-3"
+          className="w-full bg-[#4E71FF] hover:bg-[#3D62EF] active:bg-[#3153DC] text-white font-bold py-4 px-6 rounded-2xl text-xl shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center justify-center mb-3"
         >
           {t('login', 'تسجيل الدخول')}
         </button>
 
         {/* Sub-label */}
-        <p className="text-gray-300/80 text-sm sm:text-base font-normal my-1 text-center">
-          {t('dont_have_account', 'ألا تملك حساباً؟')}
+        <p className="text-gray-300 text-base font-medium my-2 text-center">
+          {t('dont_have_account', 'ليس لديك حساب؟')}
         </p>
 
         {/* Secondary Registration Button */}
@@ -1569,9 +1568,9 @@ export default function AgentLogin() {
             setRegError('');
             setShowRegScreen(true);
           }}
-          className="w-full bg-[#131926] hover:bg-[#1A2234] border border-[#252E42] text-[#4E71FF] hover:text-white font-bold py-4 px-6 rounded-2xl text-lg sm:text-xl hover:border-[#4E71FF] transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center justify-center mb-6"
+          className="w-full bg-[#0B0E14] hover:bg-[#131926] border border-[#4E71FF] text-[#4E71FF] hover:text-white font-bold py-4 px-6 rounded-2xl text-xl transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center justify-center mb-5"
         >
-          {t('registration', 'تسجيل جديد')}
+          {t('registration', 'التسجيل')}
         </button>
 
         {/* Language Switcher Button */}
