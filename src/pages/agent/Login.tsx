@@ -606,7 +606,7 @@ export default function AgentLogin() {
   if (showRegScreen) {
     return (
       <div
-        className="min-h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between font-sans select-none relative overflow-y-auto"
+        className="h-[100dvh] max-h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between font-sans select-none relative overflow-hidden overscroll-none"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Top Indicator Progress Bar */}
@@ -1382,7 +1382,7 @@ export default function AgentLogin() {
   if (showLoginForm) {
     return (
       <div
-        className="min-h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between px-6 py-4 font-sans select-none relative overflow-y-auto"
+        className="h-[100dvh] max-h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between px-6 py-4 font-sans select-none relative overflow-hidden overscroll-none"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Top Header Row with Back Button & Centered Title */}
@@ -1406,7 +1406,7 @@ export default function AgentLogin() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col items-center justify-center max-w-md w-full mx-auto space-y-5 my-auto">
+        <div className="flex-1 flex flex-col items-center justify-center max-w-md w-full mx-auto space-y-4 my-auto overflow-y-auto py-2 scrollbar-none">
           {/* Centered MobCash Ticket Logo */}
           <div className="shrink-0">
             <MobCashLogo className="w-20 h-20 sm:w-24 sm:h-24" />
@@ -1425,14 +1425,14 @@ export default function AgentLogin() {
             {/* Username Input */}
             <div className="space-y-1.5">
               <label className="block text-sm sm:text-base font-semibold text-white tracking-wide">
-                {t('username', 'Username')}
+                {t('username', 'اسم المستخدم')}
               </label>
               <input
                 type="text"
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder={t('enter_username', 'Enter username...')}
+                placeholder={t('enter_username', 'أدخل اسم المستخدم...')}
                 className="w-full bg-[#1C2538] border border-[#2B3852] focus:border-[#4E71FF] focus:ring-1 focus:ring-[#4E71FF] text-white text-base rounded-2xl py-3.5 px-5 outline-none transition-all placeholder:text-gray-500 font-normal"
                 autoFocus
               />
@@ -1441,7 +1441,7 @@ export default function AgentLogin() {
             {/* Password Input */}
             <div className="space-y-1.5">
               <label className="block text-sm sm:text-base font-semibold text-white tracking-wide">
-                {t('password', 'Password')}
+                {t('password', 'كلمة المرور')}
               </label>
               <div className="relative">
                 <input
@@ -1449,7 +1449,7 @@ export default function AgentLogin() {
                   required
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
-                  placeholder={t('enter_password', 'Enter password...')}
+                  placeholder={t('enter_password', 'أدخل كلمة المرور...')}
                   className="w-full bg-[#1C2538] border border-[#2B3852] focus:border-[#4E71FF] focus:ring-1 focus:ring-[#4E71FF] text-white text-base rounded-2xl py-3.5 ps-5 pe-12 outline-none transition-all placeholder:text-gray-500 font-normal"
                 />
                 <button
@@ -1480,7 +1480,7 @@ export default function AgentLogin() {
                 onClick={() => setRememberMe(!rememberMe)}
                 className="text-sm sm:text-base font-semibold text-white cursor-pointer select-none"
               >
-                {t('remember_me', 'Remember me')}
+                {t('remember_me', 'تذكرني')}
               </span>
             </div>
           </form>
@@ -1488,8 +1488,6 @@ export default function AgentLogin() {
 
         {/* Bottom Area with Version & Primary Button matching Screenshot */}
         <div className="w-full max-w-md mx-auto pb-3 pt-2 space-y-2.5 shrink-0">
-          
-
           <button
             type="submit"
             form="login-form"
@@ -1503,10 +1501,10 @@ export default function AgentLogin() {
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {t('loading', 'Loading...')}
+                {t('loading', 'جاري التحميل...')}
               </span>
             ) : (
-              t('login', 'Log in')
+              t('login', 'تسجيل الدخول')
             )}
           </button>
         </div>
@@ -1517,7 +1515,7 @@ export default function AgentLogin() {
   // VIEW 1: WELCOME / LANDING SPLASH SCREEN
   return (
     <div
-      className="min-h-[100dvh] w-full bg-[#0B0E14] text-white flex flex-col justify-between items-center px-6 py-6 relative overflow-y-auto font-sans select-none"
+      className="h-[100dvh] max-h-[100dvh] w-full bg-[#0B0E14] text-white flex flex-col justify-between items-center px-6 py-6 relative overflow-hidden overscroll-none font-sans select-none"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Background radial glow effect */}
@@ -1535,14 +1533,16 @@ export default function AgentLogin() {
 
         {/* Subtitle */}
         <p className="text-gray-300/90 text-lg sm:text-xl font-medium tracking-wide">
-          {t('make_money_with_us', 'Make money with us')}
+          {t('make_money_with_us', 'ربح المال معنا')}
         </p>
       </div>
 
       {/* Bottom Actions Section */}
       <div className="w-full max-w-sm flex flex-col items-center z-10 mt-auto pb-4">
         {/* Version Tag */}
-        
+        <div className="text-xs text-[#4E71FF]/90 font-mono font-bold tracking-wider mb-3 px-3.5 py-1 bg-[#131926] border border-[#252E42] rounded-full shadow-inner">
+          {t('version_label', 'الإصدار: 63.0')}
+        </div>
 
         {/* Primary Log in Button */}
         <button
@@ -1558,7 +1558,7 @@ export default function AgentLogin() {
 
         {/* Sub-label */}
         <p className="text-gray-300/80 text-sm sm:text-base font-normal my-1 text-center">
-          {t('dont_have_account', "Don't have an account?")}
+          {t('dont_have_account', 'ألا تملك حساباً؟')}
         </p>
 
         {/* Secondary Registration Button */}
@@ -1571,7 +1571,7 @@ export default function AgentLogin() {
           }}
           className="w-full bg-[#131926] hover:bg-[#1A2234] border border-[#252E42] text-[#4E71FF] hover:text-white font-bold py-4 px-6 rounded-2xl text-lg sm:text-xl hover:border-[#4E71FF] transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center justify-center mb-6"
         >
-          {t('registration', 'تسجيل')}
+          {t('registration', 'تسجيل جديد')}
         </button>
 
         {/* Language Switcher Button */}

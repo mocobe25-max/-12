@@ -328,7 +328,7 @@ export const baseAr = {
   make_money_with_us: "ربح المال معنا",
   dont_have_account: "ألا تملك حساباً؟",
   registration: "تسجيل",
-  version_label: "Version: 63.0",
+  version_label: "الإصدار: 63.0",
   enter_credentials: "أدخل بيانات الدخول",
   login_to_continue: "قم بتسجيل الدخول للوصول إلى لوحة التحكم الخاص بك",
   agent_login_title: "تسجيل دخول الوكيل",
