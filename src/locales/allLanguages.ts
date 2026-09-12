@@ -219,7 +219,23 @@ export const baseEn = {
   confirm_password: "Confirm Password",
   proceed_to_login: "Proceed to Login",
   search_country_placeholder: "Search country name...",
-  no_country_found: "No country found"
+  no_country_found: "No country found",
+  device_activation_title: "Activate Device",
+  device_activation_desc: "For security reasons, please contact your account manager and provide the following activation code:",
+  device_not_activated_yet: "Device not activated yet. Please contact your manager.",
+  verify: "Verify",
+  profile_and_account: "Profile and Account",
+  verified_agent: "Verified Agent",
+  approved_commission_rates: "Approved Commission Rates",
+  deposit_commission_short: "Deposit Commission",
+  withdraw_commission_short: "Withdraw Commission",
+  registered_work_area: "Registered Work Area",
+  theme_appearance: "Theme Appearance",
+  dark_mode: "Dark Mode",
+  light_mode: "Light Mode",
+  app_language: "App Language",
+  agent_support: "Agent Support",
+  logout_account: "Logout Account"
 };
 
 export const baseAr = {
@@ -393,7 +409,23 @@ export const baseAr = {
   confirm_password: "تأكيد كلمة السر",
   proceed_to_login: "الانتقال إلى تسجيل الدخول",
   search_country_placeholder: "ابحث عن اسم الدولة...",
-  no_country_found: "لم يتم العثور على نتائج"
+  no_country_found: "لم يتم العثور على نتائج",
+  device_activation_title: "تفعيل الجهاز",
+  device_activation_desc: "لأسباب أمنية، يرجى الاتصال بمدير حسابك وتزويده بكود التفعيل التالي:",
+  device_not_activated_yet: "لم يتم تفعيل الجهاز بعد. يرجى الاتصال بمدير الحساب.",
+  verify: "التحقق",
+  profile_and_account: "الملف الشخصي والحساب",
+  verified_agent: "وكيل معتمد وموثق",
+  approved_commission_rates: "نسب العمولات المعتمدة:",
+  deposit_commission_short: "عمولة الإيداع (Deposit)",
+  withdraw_commission_short: "عمولة السحب (Withdraw)",
+  registered_work_area: "نطاق العمل المسجل:",
+  theme_appearance: "المظهر (Dark / Light)",
+  dark_mode: "الوضع الداكن",
+  light_mode: "الوضع الفاتح",
+  app_language: "لغة التطبيق",
+  agent_support: "دعم الوكلاء المعتمد (Reddy & Telegram)",
+  logout_account: "تسجيل الخروج من الحساب"
 };
 
 export const translations: Record<string, Record<string, string>> = {

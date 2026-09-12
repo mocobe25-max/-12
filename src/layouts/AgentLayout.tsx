@@ -38,6 +38,15 @@ export function AgentLayout() {
   if (!user || role !== 'agent') return null;
 
   const isRtl = ['ar', 'ur', 'fa'].includes(i18n.language?.split('-')[0] || 'en');
+  const isDashboard = location.pathname === '/agent/dashboard';
+
+  if (isDashboard) {
+    return (
+      <div className="min-h-screen font-sans" dir={isRtl ? 'rtl' : 'ltr'}>
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950 font-sans" dir={isRtl ? 'rtl' : 'ltr'}>

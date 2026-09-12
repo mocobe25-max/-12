@@ -27,46 +27,54 @@ export default function DeviceActivation() {
           localStorage.setItem('mobcash_device_id', deviceId);
         }
 
-        const { data, error } = await supabase
-          .from('agent_devices')
-          .select('*')
-          .eq('agent_id', user.agent_id)
-          .eq('device_id', deviceId)
-          .maybeSingle();
-
-        if (error) {
-          console.warn('Note on fetching device status:', error.message);
+        let deviceData: any = null;
+        try {
+          const { data, error } = await supabase
+            .from('agent_devices')
+            .select('*')
+            .eq('agent_id', user.agent_id)
+            .eq('device_id', deviceId)
+            .maybeSingle();
+          if (data) deviceData = data;
+        } catch (err) {
+          console.error('Supabase agent_devices fetch error:', err);
         }
 
-        if (data) {
-          if (data.status === 'active') {
+        if (deviceData) {
+          if (deviceData.status === 'active') {
             navigate('/agent/dashboard');
           } else {
-            setActivationCode(data.activation_code);
+            setActivationCode(deviceData.activation_code);
+            localStorage.setItem(`activation_code_${deviceId}`, deviceData.activation_code);
             setLoading(false);
           }
         } else {
-          // generate new code
-          const generateActivationCode = () => {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-            for (let i = 0; i < 4; i++) {
-              result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
-          };
-          const newCode = generateActivationCode();
+          // generate new code or use local saved one
+          let newCode = localStorage.getItem(`activation_code_${deviceId}`);
+          if (!newCode) {
+             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+             newCode = '';
+             for (let i = 0; i < 4; i++) {
+               newCode += chars.charAt(Math.floor(Math.random() * chars.length));
+             }
+             localStorage.setItem(`activation_code_${deviceId}`, newCode);
+          }
           setActivationCode(newCode);
           
-          await supabase.from('agent_devices').insert([
-            {
-              agent_id: user.agent_id,
-              device_id: deviceId,
-              device_name: navigator.userAgent.substring(0, 50), // simple device name
-              activation_code: newCode,
-              status: 'pending'
-            }
-          ]);
+          try {
+            await supabase.from('agent_devices').insert([
+              {
+                agent_id: user.agent_id,
+                device_id: deviceId,
+                device_name: navigator.userAgent.substring(0, 50),
+                activation_code: newCode,
+                status: 'pending'
+              }
+            ]);
+          } catch(e) {
+            console.error('Error inserting device:', e);
+          }
+
           setLoading(false);
         }
       } catch (err) {
@@ -82,14 +90,33 @@ export default function DeviceActivation() {
     setLoading(true);
     try {
       const deviceId = localStorage.getItem('mobcash_device_id');
-      const { data, error } = await supabase
-        .from('agent_devices')
-        .select('status')
-        .eq('agent_id', user.agent_id)
-        .eq('device_id', deviceId)
-        .single();
+      let status = 'pending';
+      try {
+        const { data } = await supabase
+          .from('agent_devices')
+          .select('status')
+          .eq('agent_id', user.agent_id)
+          .eq('device_id', deviceId)
+          .single();
+        if (data) status = data.status;
+      } catch (err) {
+        // ignore
+      }
         
-      if (data && data.status === 'active') {
+      if (status === 'active') {
+        // Update user status
+        const updatedUser = { ...user, status: 'active' };
+        useAuthStore.getState().setUser(updatedUser, 'agent');
+        
+        try {
+          const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+          const aIndex = localAgents.findIndex((a: any) => a.agent_id === user.agent_id);
+          if (aIndex >= 0) {
+            localAgents[aIndex].status = 'active';
+            localStorage.setItem('local_registered_agents', JSON.stringify(localAgents));
+          }
+        } catch(e) {}
+
         navigate('/agent/dashboard');
       } else {
         alert(t('device_not_activated_yet', 'Device not activated yet. Please contact your manager.'));

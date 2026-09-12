@@ -110,6 +110,8 @@ export default function AgentLogin() {
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [createdAgentId, setCreatedAgentId] = useState(() => initialFlow?.createdAgentId ?? '');
+  const [createdPassword, setCreatedPassword] = useState(() => initialFlow?.createdPassword ?? '');
+  const [copiedPassword, setCopiedPassword] = useState(false);
   const [managerCode, setManagerCode] = useState(() => initialFlow?.managerCode ?? '');
   const [copiedManagerCode, setCopiedManagerCode] = useState(false);
   const [regLoading, setRegLoading] = useState(false);
@@ -182,6 +184,7 @@ export default function AgentLogin() {
         contactMethod,
         telegramUsername,
         createdAgentId,
+        createdPassword,
         managerCode,
       };
       localStorage.setItem('agent_registration_flow_state', JSON.stringify(stateToSave));
@@ -203,6 +206,7 @@ export default function AgentLogin() {
     contactMethod,
     telegramUsername,
     createdAgentId,
+    createdPassword,
     managerCode,
   ]);
 
@@ -606,7 +610,7 @@ export default function AgentLogin() {
   if (showRegScreen) {
     return (
       <div
-        className="h-[100dvh] max-h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between font-sans select-none relative overflow-hidden overscroll-none"
+        className="fixed inset-0 w-full bg-[#0b0e17] text-white flex flex-col justify-between font-sans select-none overflow-hidden overscroll-none"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Top Indicator Progress Bar */}
@@ -1382,7 +1386,7 @@ export default function AgentLogin() {
   if (showLoginForm) {
     return (
       <div
-        className="h-[100dvh] max-h-[100dvh] w-full bg-[#0b0e17] text-white flex flex-col justify-between px-6 py-4 font-sans select-none relative overflow-hidden overscroll-none"
+        className="fixed inset-0 w-full bg-[#0b0e17] text-white flex flex-col justify-between px-6 py-4 font-sans select-none overflow-hidden overscroll-none"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         {/* Top Header Row with Back Button & Centered Title */}
@@ -1515,7 +1519,7 @@ export default function AgentLogin() {
   // VIEW 1: WELCOME / LANDING SPLASH SCREEN
   return (
     <div
-      className="h-[100dvh] max-h-[100dvh] w-full bg-[#0B0E14] text-white flex flex-col justify-between items-center px-6 py-6 relative overflow-hidden overscroll-none font-sans select-none"
+      className="fixed inset-0 w-full bg-[#0B0E14] text-white flex flex-col justify-between items-center px-6 py-6 overflow-hidden overscroll-none font-sans select-none"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Top Branding Section */}
@@ -1536,10 +1540,17 @@ export default function AgentLogin() {
 
       {/* Bottom Actions Section */}
       <div className="w-full max-w-sm flex flex-col items-center z-10 mt-auto pb-2">
-        {/* Version Tag (Far left above primary button) */}
-        <div className="w-full flex justify-start mb-3 px-1" dir="ltr">
-          <span className="text-sm text-gray-400 font-sans font-normal">
-            Version: 63.0
+        {/* Registration Tag (Far left above primary button) */}
+        <div className="w-full flex justify-start mb-3 px-1" dir={isRtl ? 'rtl' : 'ltr'}>
+          <span 
+            className="text-sm text-gray-400 hover:text-white font-sans font-medium cursor-pointer transition-colors"
+            onClick={() => {
+              setRegStep(1);
+              setRegError('');
+              setShowRegScreen(true);
+            }}
+          >
+            {t('registration', 'التسجيل')}
           </span>
         </div>
 

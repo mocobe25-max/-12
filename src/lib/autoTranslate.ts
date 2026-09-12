@@ -1,6 +1,6 @@
 import { baseEn } from '../locales/allLanguages';
 
-const CACHE_PREFIX = 'mobcash_tr_v3_';
+const CACHE_PREFIX = 'mobcash_tr_v4_';
 
 /**
  * Translates a batch of texts to the specified target language seamlessly using Google Translate API.
@@ -24,29 +24,40 @@ export async function autoTranslateLanguage(targetLang: string): Promise<Record<
 
   try {
     const keys = Object.keys(baseEn) as Array<keyof typeof baseEn>;
-    const values = keys.map((k) => baseEn[k]);
-
-    // Use a unique delimiter that Google Translate won't mangle
-    const DELIMITER = ' ::: ';
-    const textToTranslate = values.join(DELIMITER);
-
-    const apiLang = targetLang === 'zh-CN' ? 'zh-CN' : targetLang === 'zh-TW' ? 'zh-TW' : targetLang.split('-')[0];
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(apiLang)}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
-
-    const response = await fetch(url);
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    if (!data || !data[0]) return null;
-
-    const fullText = data[0].map((item: any) => item[0]).join('');
-    const parts = fullText.split(/\s*:::\s*/);
-
     const resultDict: Record<string, string> = {};
-    keys.forEach((key, idx) => {
-      const translated = parts[idx]?.trim();
-      resultDict[key] = translated || baseEn[key];
-    });
+    const DELIMITER = ' ::: ';
+    const apiLang = targetLang === 'zh-CN' ? 'zh-CN' : targetLang === 'zh-TW' ? 'zh-TW' : targetLang.split('-')[0];
+
+    // Chunk size to prevent URL from getting too long for GET request
+    const CHUNK_SIZE = 25;
+    
+    for (let i = 0; i < keys.length; i += CHUNK_SIZE) {
+      const chunkKeys = keys.slice(i, i + CHUNK_SIZE);
+      const chunkValues = chunkKeys.map(k => baseEn[k]);
+      const textToTranslate = chunkValues.join(DELIMITER);
+      
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${encodeURIComponent(apiLang)}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+         chunkKeys.forEach(k => resultDict[k] = baseEn[k]);
+         continue;
+      }
+      
+      const data = await response.json();
+      if (!data || !data[0]) {
+         chunkKeys.forEach(k => resultDict[k] = baseEn[k]);
+         continue;
+      }
+
+      const fullText = data[0].map((item: any) => item[0]).join('');
+      const parts = fullText.split(/\s*:::\s*/);
+
+      chunkKeys.forEach((key, idx) => {
+        const translated = parts[idx]?.trim();
+        resultDict[key] = translated || baseEn[key];
+      });
+    }
 
     // Save to cache
     localStorage.setItem(cacheKey, JSON.stringify(resultDict));

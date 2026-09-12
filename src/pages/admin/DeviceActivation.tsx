@@ -24,13 +24,23 @@ export default function AdminDeviceActivation() {
     setLoading(true);
     try {
       // Fetch agents
-      const { data: agentsData, error: agentsError } = await supabase
-        .from('agents')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (agentsError) throw agentsError;
-      setAgents(agentsData || []);
+      let dbAgents: any[] = [];
+      try {
+        const { data: agentsData } = await supabase
+          .from('agents')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (agentsData) dbAgents = agentsData;
+      } catch(e) {}
+      
+      const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+      
+      // Combine agents ensuring uniqueness by agent_id
+      const allAgentsMap = new Map();
+      [...dbAgents, ...localAgents].forEach(a => {
+        if (!allAgentsMap.has(a.agent_id)) allAgentsMap.set(a.agent_id, a);
+      });
+      setAgents(Array.from(allAgentsMap.values()));
 
       // Fetch all devices
       const { data: devicesData, error: devicesError } = await supabase
@@ -38,7 +48,9 @@ export default function AdminDeviceActivation() {
         .select('*')
         .order('created_at', { ascending: false });
         
-      if (devicesError) throw devicesError;
+      if (devicesError) {
+        console.error('Error fetching devices:', devicesError);
+      }
       setDevices(devicesData || []);
     } catch (err) {
       console.error(err);
