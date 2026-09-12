@@ -270,14 +270,25 @@ export default function AdminDeviceActivation() {
             <h3 className="text-xl font-bold text-gray-900 mb-2">{t('enter_activation_code', 'أدخل كود التفعيل')}</h3>
             <p className="text-sm text-gray-500 mb-6">{t('ask_agent_for_code', 'اطلب كود التفعيل من الوكيل وأدخله هنا لتفعيل الجهاز.')}</p>
             
-            <input
-              type="text"
-              value={inputCode}
-              onChange={(e) => setInputCode(e.target.value)}
-              className="w-full text-center text-2xl font-mono tracking-widest px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-xl mb-6 outline-none"
-              placeholder="----"
-              maxLength={4}
-            />
+            <div className="mb-4">
+              <input
+                type="text"
+                value={inputCode}
+                onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+                className="w-full text-center text-3xl font-mono tracking-widest px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-xl outline-none uppercase font-bold text-blue-600"
+                placeholder="----"
+                maxLength={4}
+              />
+              {selectedDevice?.activation_code && (
+                <button
+                  type="button"
+                  onClick={() => setInputCode(selectedDevice.activation_code.substring(0, 4).toUpperCase())}
+                  className="mt-2 w-full text-xs font-bold text-blue-600 hover:underline text-center"
+                >
+                  كود الجهاز: <span className="font-mono bg-blue-50 px-2 py-0.5 rounded border border-blue-200">{selectedDevice.activation_code.substring(0, 4).toUpperCase()}</span> (انقر للتعبئة)
+                </button>
+              )}
+            </div>
             
             <div className="flex gap-3">
               <button

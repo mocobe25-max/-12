@@ -57,18 +57,19 @@ export default function DeviceActivation() {
             }
           } else {
             if (isMounted) {
-              setActivationCode(deviceData.activation_code);
-              localStorage.setItem(`activation_code_${user.agent_id}_${deviceId}`, deviceData.activation_code);
+              const code = deviceData.activation_code ? deviceData.activation_code.substring(0, 4) : '';
+              setActivationCode(code);
+              localStorage.setItem(`activation_code_${user.agent_id}_${deviceId}`, code);
               setLoading(false);
             }
           }
         } else {
-          // generate new code unique to this agent and device
+          // generate new 4-character code unique to this agent and device
           let newCode = localStorage.getItem(`activation_code_${user.agent_id}_${deviceId}`);
-          if (!newCode) {
+          if (!newCode || newCode.length !== 4) {
              const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
              newCode = '';
-             for (let i = 0; i < 6; i++) {
+             for (let i = 0; i < 4; i++) {
                newCode += chars.charAt(Math.floor(Math.random() * chars.length));
              }
              localStorage.setItem(`activation_code_${user.agent_id}_${deviceId}`, newCode);
