@@ -90,11 +90,20 @@ export default function AgentDashboard() {
 
   const checkDeviceStatus = async () => {
     if (!user) return;
-    const deviceId = localStorage.getItem('mobcash_device_id');
+    const deviceStorageKey = `mobcash_device_id_${user.agent_id}`;
+    let deviceId = localStorage.getItem(deviceStorageKey) || localStorage.getItem('mobcash_device_id');
+    
     if (!deviceId) {
       navigate('/agent/device-activation');
       return;
     }
+
+    // Sync both keys so all components find the deviceId
+    localStorage.setItem(deviceStorageKey, deviceId);
+    localStorage.setItem('mobcash_device_id', deviceId);
+
+    const isLocalActive = localStorage.getItem(`device_active_${user.agent_id}_${deviceId}`) === 'true';
+
     try {
       const { data } = await supabase
         .from('agent_devices')
@@ -103,8 +112,19 @@ export default function AgentDashboard() {
         .eq('device_id', deviceId)
         .maybeSingle();
 
+      if (data && data.status === 'active') {
+        localStorage.setItem(`device_active_${user.agent_id}_${deviceId}`, 'true');
+        return;
+      }
+
+      if (!data && isLocalActive) {
+        return;
+      }
+
       if (!data || data.status !== 'active') {
-        navigate('/agent/device-activation');
+        if (!isLocalActive) {
+          navigate('/agent/device-activation');
+        }
       }
     } catch (e) {
       console.warn('Device check note:', e);

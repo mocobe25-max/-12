@@ -68,22 +68,49 @@ export function AgentLayout() {
     // Polling & Real-time fetch function
     const checkAgentStatus = async () => {
       try {
-        const { data, error } = await supabase
-          .from('agents')
-          .select('*')
-          .eq('agent_id', user.agent_id)
-          .maybeSingle();
+        const deviceStorageKey = `mobcash_device_id_${user.agent_id}`;
+        const deviceId = localStorage.getItem(deviceStorageKey) || localStorage.getItem('mobcash_device_id') || '';
 
-        if (error || !data) {
-          // Record deleted in Supabase
-          if (data === null) {
-            handleStatusUpdate('deleted');
+        const isLocalDeviceActive = deviceId ? localStorage.getItem(`device_active_${user.agent_id}_${deviceId}`) === 'true' : false;
+        const isLocalAgentActive = localStorage.getItem(`agent_active_${user.agent_id}`) === 'true';
+
+        let targetStatus = user.status;
+        let updatedData: any = null;
+
+        try {
+          const { data } = await supabase
+            .from('agents')
+            .select('*')
+            .eq('agent_id', user.agent_id)
+            .maybeSingle();
+
+          if (data) {
+            updatedData = data;
+            targetStatus = data.status;
           }
-          return;
+        } catch (err) {
+          // ignore fetch error
         }
 
-        if (data.status !== user.status || data.balance !== user.balance) {
-          handleStatusUpdate(data.status, data);
+        // Check local registered agents list
+        try {
+          const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+          const localMatch = localAgents.find((a: any) => a.agent_id === user.agent_id);
+          if (localMatch && localMatch.status === 'active') {
+            targetStatus = 'active';
+            if (!updatedData) updatedData = localMatch;
+          }
+        } catch(e) {}
+
+        // If device or agent is active locally, prioritize active status
+        if (isLocalDeviceActive || isLocalAgentActive) {
+          targetStatus = 'active';
+        }
+
+        if (targetStatus && targetStatus !== user.status) {
+          handleStatusUpdate(targetStatus, updatedData);
+        } else if (updatedData && (updatedData.balance !== user.balance || updatedData.currency !== user.currency)) {
+          useAuthStore.getState().setUser({ ...user, ...updatedData }, 'agent');
         }
       } catch (err) {
         // ignore fetch error

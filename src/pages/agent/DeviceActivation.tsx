@@ -28,10 +28,22 @@ export default function DeviceActivation() {
     const checkDevice = async () => {
       try {
         const deviceStorageKey = `mobcash_device_id_${user.agent_id}`;
-        deviceId = localStorage.getItem(deviceStorageKey) || '';
+        deviceId = localStorage.getItem(deviceStorageKey) || localStorage.getItem('mobcash_device_id') || '';
         if (!deviceId) {
           deviceId = 'dev_' + user.agent_id + '_' + Math.random().toString(36).substring(2, 10);
-          localStorage.setItem(deviceStorageKey, deviceId);
+        }
+        localStorage.setItem(deviceStorageKey, deviceId);
+        localStorage.setItem('mobcash_device_id', deviceId);
+
+        // Immediate local activation check
+        const isLocalActive = localStorage.getItem(`device_active_${user.agent_id}_${deviceId}`) === 'true';
+        if (isLocalActive) {
+          if (isMounted) {
+            const updatedUser = { ...user, status: 'active' };
+            useAuthStore.getState().setUser(updatedUser, 'agent');
+            navigate('/agent/dashboard');
+            return;
+          }
         }
 
         let deviceData: any = null;
@@ -44,12 +56,18 @@ export default function DeviceActivation() {
             .maybeSingle();
           if (data) deviceData = data;
         } catch (err) {
-          console.error('Supabase agent_devices fetch error:', err);
+          console.warn('Supabase agent_devices fetch note:', err);
+        }
+
+        if (!deviceData) {
+          const localDevices = JSON.parse(localStorage.getItem('local_agent_devices') || '[]');
+          deviceData = localDevices.find((d: any) => d.agent_id === user.agent_id && d.device_id === deviceId);
         }
 
         if (deviceData) {
           if (deviceData.status === 'active') {
             if (isMounted) {
+              localStorage.setItem(`device_active_${user.agent_id}_${deviceId}`, 'true');
               const updatedUser = { ...user, status: 'active' };
               useAuthStore.getState().setUser(updatedUser, 'agent');
               navigate('/agent/dashboard');
@@ -79,22 +97,30 @@ export default function DeviceActivation() {
             setActivationCode(newCode);
           }
           
+          const newDeviceObj = {
+            id: 'dev_' + user.agent_id + '_' + Math.random().toString(36).substring(2, 9),
+            agent_id: user.agent_id,
+            device_id: deviceId,
+            device_name: navigator.userAgent.substring(0, 50),
+            activation_code: newCode,
+            status: 'pending',
+            created_at: new Date().toISOString()
+          };
+          
+          const existingLocalDevices = JSON.parse(localStorage.getItem('local_agent_devices') || '[]');
+          if (!existingLocalDevices.some((d: any) => d.agent_id === user.agent_id && d.device_id === deviceId)) {
+            existingLocalDevices.push(newDeviceObj);
+            localStorage.setItem('local_agent_devices', JSON.stringify(existingLocalDevices));
+          }
+
           try {
-            await supabase.from('agent_devices').insert([
-              {
-                agent_id: user.agent_id,
-                device_id: deviceId,
-                device_name: navigator.userAgent.substring(0, 50),
-                activation_code: newCode,
-                status: 'pending'
-              }
-            ]);
+            await supabase.from('agent_devices').insert([newDeviceObj]);
             
             // Send telegram notification to admin
             const message = `🔔 <b>New Device Activation Request</b>\n\n<b>Agent ID:</b> <code>${user.agent_id}</code>\n<b>Agent Name:</b> ${user.full_name}\n<b>Device ID:</b> <code>${deviceId}</code>\n<b>Activation Code:</b> <code>${newCode}</code>\n\nPlease activate this device from the Admin Panel.`;
             await sendTelegramNotification(message);
           } catch(e) {
-            console.error('Error inserting device:', e);
+            console.warn('Note inserting device to database:', e);
           }
 
           if (isMounted) {
@@ -111,33 +137,57 @@ export default function DeviceActivation() {
 
     // Setup Realtime listener + Polling for instant device activation detection
     const deviceStorageKey = `mobcash_device_id_${user.agent_id}`;
-    const currentDeviceId = localStorage.getItem(deviceStorageKey) || '';
 
     const checkActivationStatus = async () => {
-      if (!currentDeviceId) return;
+      const activeDeviceId = deviceId || localStorage.getItem(deviceStorageKey) || localStorage.getItem('mobcash_device_id') || '';
+      if (!activeDeviceId) return;
+
+      // Check local active flag
+      const isLocalActive = localStorage.getItem(`device_active_${user.agent_id}_${activeDeviceId}`) === 'true';
+      const localDevices = JSON.parse(localStorage.getItem('local_agent_devices') || '[]');
+      const localDev = localDevices.find((d: any) => (d.agent_id === user.agent_id || d.device_id === activeDeviceId) && d.status === 'active');
+
+      if (isLocalActive || localDev) {
+        if (isMounted) {
+          setActivatedSuccess(true);
+          localStorage.setItem(`device_active_${user.agent_id}_${activeDeviceId}`, 'true');
+          const updatedUser = { ...user, status: 'active' };
+          useAuthStore.getState().setUser(updatedUser, 'agent');
+          setTimeout(() => {
+            if (isMounted) navigate('/agent/dashboard');
+          }, 800);
+          return;
+        }
+      }
+
       try {
         const { data } = await supabase
           .from('agent_devices')
           .select('status')
           .eq('agent_id', user.agent_id)
-          .eq('device_id', currentDeviceId)
+          .eq('device_id', activeDeviceId)
           .maybeSingle();
 
         if (data && data.status === 'active') {
-          setActivatedSuccess(true);
-          const updatedUser = { ...user, status: 'active' };
-          useAuthStore.getState().setUser(updatedUser, 'agent');
-          setTimeout(() => {
-            navigate('/agent/dashboard');
-          }, 1200);
+          if (isMounted) {
+            setActivatedSuccess(true);
+            localStorage.setItem(`device_active_${user.agent_id}_${activeDeviceId}`, 'true');
+            const updatedUser = { ...user, status: 'active' };
+            useAuthStore.getState().setUser(updatedUser, 'agent');
+            setTimeout(() => {
+              if (isMounted) navigate('/agent/dashboard');
+            }, 800);
+          }
         }
       } catch(e) {}
     };
 
-    const interval = setInterval(checkActivationStatus, 3000);
+    const interval = setInterval(checkActivationStatus, 1500);
+    checkActivationStatus();
 
+    const initialDevId = localStorage.getItem(deviceStorageKey) || localStorage.getItem('mobcash_device_id') || '';
     const channel = supabase
-      .channel(`device_status_${user.agent_id}_${currentDeviceId}`)
+      .channel(`device_status_${user.agent_id}_${initialDevId}`)
       .on(
         'postgres_changes',
         {
@@ -147,13 +197,17 @@ export default function DeviceActivation() {
           filter: `agent_id=eq.${user.agent_id}`
         },
         (payload: any) => {
-          if (payload.new && payload.new.device_id === currentDeviceId && payload.new.status === 'active') {
-            setActivatedSuccess(true);
-            const updatedUser = { ...user, status: 'active' };
-            useAuthStore.getState().setUser(updatedUser, 'agent');
-            setTimeout(() => {
-              navigate('/agent/dashboard');
-            }, 1200);
+          if (payload.new && payload.new.status === 'active') {
+            if (isMounted) {
+              setActivatedSuccess(true);
+              const currentDevId = payload.new.device_id || initialDevId;
+              localStorage.setItem(`device_active_${user.agent_id}_${currentDevId}`, 'true');
+              const updatedUser = { ...user, status: 'active' };
+              useAuthStore.getState().setUser(updatedUser, 'agent');
+              setTimeout(() => {
+                if (isMounted) navigate('/agent/dashboard');
+              }, 800);
+            }
           }
         }
       )

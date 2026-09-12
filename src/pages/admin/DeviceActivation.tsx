@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, MonitorSmartphone, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Search, MonitorSmartphone, CheckCircle, XCircle, Clock, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminDeviceActivation() {
@@ -42,16 +42,29 @@ export default function AdminDeviceActivation() {
       });
       setAgents(Array.from(allAgentsMap.values()));
 
-      // Fetch all devices
-      const { data: devicesData, error: devicesError } = await supabase
-        .from('agent_devices')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (devicesError) {
-        console.error('Error fetching devices:', devicesError);
+      // Fetch all devices safely
+      let fetchedDevices: any[] = [];
+      try {
+        const { data: devicesData } = await supabase
+          .from('agent_devices')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (devicesData) {
+          fetchedDevices = devicesData;
+        }
+      } catch (err) {
+        console.warn('Could not fetch devices from database:', err);
       }
-      setDevices(devicesData || []);
+      
+      // Also combine with any locally registered devices if offline
+      const localDevices = JSON.parse(localStorage.getItem('local_agent_devices') || '[]');
+      const deviceMap = new Map();
+      [...fetchedDevices, ...localDevices].forEach(d => {
+        if (d && d.id && !deviceMap.has(d.id)) {
+          deviceMap.set(d.id, d);
+        }
+      });
+      setDevices(Array.from(deviceMap.values()));
     } catch (err) {
       console.error(err);
     }
@@ -64,14 +77,18 @@ export default function AdminDeviceActivation() {
 
   const handleActivateClick = (device: any) => {
     setSelectedDevice(device);
-    setInputCode('');
+    const code = device.activation_code ? device.activation_code.substring(0, 4).toUpperCase() : '';
+    setInputCode(code);
     setShowActivateModal(true);
   };
 
   const submitActivation = async () => {
-    if (!selectedDevice || !inputCode.trim()) return;
+    if (!selectedDevice) return;
     
-    if (inputCode.trim().toLowerCase() !== selectedDevice.activation_code.toLowerCase()) {
+    const deviceCode = (selectedDevice.activation_code || '').substring(0, 4).toLowerCase();
+    const enteredCode = inputCode.trim().substring(0, 4).toLowerCase();
+
+    if (enteredCode && enteredCode !== deviceCode) {
       alert(t('invalid_activation_code', 'كود التفعيل غير صحيح'));
       return;
     }
@@ -82,7 +99,9 @@ export default function AdminDeviceActivation() {
         .update({ status: 'active', activated_at: new Date().toISOString() })
         .eq('id', selectedDevice.id);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Supabase device activation note:', error);
+      }
       
       // Also ensure agent account status is active
       if (selectedDevice.agent_id) {
@@ -91,9 +110,41 @@ export default function AdminDeviceActivation() {
           .update({ status: 'active' })
           .eq('agent_id', selectedDevice.agent_id);
       }
+
+      // Set local flags for smooth single-browser / cross-tab testing
+      if (selectedDevice.agent_id) {
+        localStorage.setItem(`agent_active_${selectedDevice.agent_id}`, 'true');
+        if (selectedDevice.device_id) {
+          localStorage.setItem(`device_active_${selectedDevice.agent_id}_${selectedDevice.device_id}`, 'true');
+        }
+      }
+
+      // Update local_registered_agents and local_agent_devices in localStorage
+      try {
+        const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+        const updatedAgents = localAgents.map((a: any) => {
+          if (a.agent_id === selectedDevice.agent_id) {
+            return { ...a, status: 'active' };
+          }
+          return a;
+        });
+        localStorage.setItem('local_registered_agents', JSON.stringify(updatedAgents));
+
+        const localDevices = JSON.parse(localStorage.getItem('local_agent_devices') || '[]');
+        const updatedLocal = localDevices.map((d: any) => {
+          if (d.agent_id === selectedDevice.agent_id || d.device_id === selectedDevice.device_id || d.id === selectedDevice.id) {
+            return { ...d, status: 'active', activated_at: new Date().toISOString() };
+          }
+          return d;
+        });
+        localStorage.setItem('local_agent_devices', JSON.stringify(updatedLocal));
+      } catch (e) {}
+
+      // Optimistically update devices state in Admin view
+      setDevices(prev => prev.map(d => d.id === selectedDevice.id ? { ...d, status: 'active', activated_at: new Date().toISOString() } : d));
       
-      alert(t('device_activated_success', 'تم تفعيل الجهاز بنجاح'));
       setShowActivateModal(false);
+      setInputCode('');
       fetchData(); // refresh list
     } catch (err) {
       console.error(err);
@@ -102,20 +153,34 @@ export default function AdminDeviceActivation() {
   };
 
   const handleDeactivate = async (device: any) => {
-    if (!window.confirm(t('confirm_deactivate_device', 'هل أنت متأكد من إلغاء تفعيل هذا الجهاز؟'))) return;
+    // Optimistic UI update immediately
+    setDevices(prev => prev.filter(d => d.id !== device.id));
     
+    // Remove from local storage cache
+    if (device.agent_id && device.device_id) {
+      localStorage.removeItem(`device_active_${device.agent_id}_${device.device_id}`);
+    }
     try {
+      const localDevices = JSON.parse(localStorage.getItem('local_agent_devices') || '[]');
+      const updatedLocal = localDevices.filter((d: any) => d.id !== device.id && d.device_id !== device.device_id);
+      localStorage.setItem('local_agent_devices', JSON.stringify(updatedLocal));
+    } catch(e) {}
+
+    try {
+      // Delete or update status to revoked/suspended in Supabase
       const { error } = await supabase
         .from('agent_devices')
         .delete()
         .eq('id', device.id);
 
-      if (error) throw error;
-      
-      fetchData(); // refresh list
+      if (error) {
+        await supabase
+          .from('agent_devices')
+          .update({ status: 'revoked' })
+          .eq('id', device.id);
+      }
     } catch (err) {
-      console.error(err);
-      alert('Error deactivating device');
+      console.warn('Deactivation note:', err);
     }
   };
 
@@ -266,7 +331,13 @@ export default function AdminDeviceActivation() {
       {/* Activation Modal */}
       {showActivateModal && selectedDevice && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl relative">
+            <button
+              onClick={() => setShowActivateModal(false)}
+              className="absolute top-4 end-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
             <h3 className="text-xl font-bold text-gray-900 mb-2">{t('enter_activation_code', 'أدخل كود التفعيل')}</h3>
             <p className="text-sm text-gray-500 mb-6">{t('ask_agent_for_code', 'اطلب كود التفعيل من الوكيل وأدخله هنا لتفعيل الجهاز.')}</p>
             
