@@ -50,6 +50,8 @@ export default function App() {
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="suspended" element={<Suspended />} />
             <Route path="device-activation" element={<DeviceActivation />} />
+          <Route path="deposits" element={<AdminDeposits />} />
+          <Route path="support" element={<AdminSupport />} />
           </Route>
 
           {/* Catch-all 404 Route */}

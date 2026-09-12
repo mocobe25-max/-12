@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '../../../components/LanguageSwitcher';
 
 interface ProfileDrawerProps {
+  onOpenSupport: () => void;
   isOpen: boolean;
   onClose: () => void;
   user: any;
@@ -15,6 +16,7 @@ interface ProfileDrawerProps {
 }
 
 export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
+  onOpenSupport,
   isOpen,
   onClose,
   user,
@@ -144,18 +146,15 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
           </div>
 
           {/* Support Link */}
-          <a
-            href="https://t.me/r_verification"
-            target="_blank"
-            rel="noreferrer"
+          <button
+            onClick={() => { onClose(); onOpenSupport(); }}
             className="w-full p-3 rounded-xl bg-blue-50 dark:bg-slate-800 text-[#3B66F5] text-xs font-bold flex items-center justify-between hover:bg-blue-100 transition-colors"
           >
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              <span>{t('agent_support', 'دعم الوكلاء المعتمد (Reddy & Telegram)')}</span>
+              <span>{t('agent_support_chat', 'الدعم المباشر (محادثة حية)')}</span>
             </div>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          </button>
         </div>
 
         {/* Drawer Footer: Logout */}

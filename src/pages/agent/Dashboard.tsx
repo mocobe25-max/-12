@@ -6,7 +6,9 @@ import { supabase } from '../../lib/supabase';
 import { MobCashHeader } from './components/MobCashHeader';
 import { LimitBalanceCard } from './components/LimitBalanceCard';
 import { QuickActionButtons } from './components/QuickActionButtons';
-import { QuickServicesBar } from './components/QuickServicesBar';
+import { Wallet } from 'lucide-react';
+import { DepositUSDTModal } from './components/DepositUSDTModal';
+import { LiveSupportModal } from './components/LiveSupportModal';
 import { RecentTransactionsList, MobCashTransaction } from './components/RecentTransactionsList';
 import { DepositModal } from './components/DepositModal';
 import { WithdrawModal } from './components/WithdrawModal';
@@ -43,10 +45,8 @@ export default function AgentDashboard() {
     return saved ? parseFloat(saved) : 26784.62;
   });
 
-  const [balanceAmount, setBalanceAmount] = useState<number>(() => {
-    const saved = localStorage.getItem(`mobcash_solde_${user?.agent_id || 'default'}`);
-    return saved ? parseFloat(saved) : 1634208.81;
-  });
+  const [balanceAmount, setBalanceAmount] = useState<number>(user?.balance || 0);
+  const [currency, setCurrency] = useState<string>(user?.currency || 'USD');
 
   // Transactions State
   const [transactions, setTransactions] = useState<MobCashTransaction[]>([]);
@@ -56,13 +56,15 @@ export default function AgentDashboard() {
   // Modals state
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
-  const [isCancelDepositOpen, setIsCancelDepositOpen] = useState(false);
-  const [isPartnershipOpen, setIsPartnershipOpen] = useState(false);
-  const [isSubagentsOpen, setIsSubagentsOpen] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isUSDTDepositOpen, setIsUSDTDepositOpen] = useState(false);
+  
+  
+  
+  
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isPrepaymentOpen, setIsPrepaymentOpen] = useState(false);
+  
   const [selectedTransaction, setSelectedTransaction] = useState<MobCashTransaction | null>(null);
 
   // Device status & authentication check
@@ -75,6 +77,7 @@ export default function AgentDashboard() {
     checkDeviceStatus();
     supabase.from('agents').update({ current_step: 'Dashboard' }).eq('id', user.id);
     fetchTransactions();
+    fetchAgentData();
   }, [user]);
 
   // Save limit & balance locally
@@ -108,6 +111,17 @@ export default function AgentDashboard() {
     }
   };
 
+  const fetchAgentData = async () => {
+    if (!user?.agent_id) return;
+    const { data } = await supabase.from('agents').select('balance, currency').eq('agent_id', user.agent_id).single();
+    if (data) {
+      setBalanceAmount(Number(data.balance) || 0);
+      setCurrency(data.currency || 'USD');
+      
+      const updatedUser = { ...user, balance: Number(data.balance) || 0, currency: data.currency || 'USD' };
+      useAuthStore.getState().setUser(updatedUser, 'agent');
+    }
+  };
   const fetchTransactions = async () => {
     if (!user) return;
     setIsRefreshing(true);
@@ -178,8 +192,7 @@ export default function AgentDashboard() {
     const rate = user.commission_deposit || 5;
     const commissionEarned = (amount * rate) / 100;
     const shortRef = Math.floor(100 + Math.random() * 900).toString();
-
-    const newTx: MobCashTransaction = {
+    const newTx = {
       id: 'tx_' + Date.now(),
       tx_number: `№...${shortRef}`,
       agent_id: user.agent_id,
@@ -192,7 +205,15 @@ export default function AgentDashboard() {
       status: 'completed',
       created_at: new Date().toISOString(),
     };
-
+    
+    // Deduct balance
+    const newBalance = balanceAmount - amount;
+    await supabase.from('agents').update({ balance: newBalance }).eq('agent_id', user.agent_id);
+    
+    // Refresh
+    setBalanceAmount(newBalance);
+    fetchTransactions();
+    
     // Update state & balances
     setLimitAmount((prev) => Math.max(0, prev - amount));
     setBalanceAmount((prev) => prev + amount);
@@ -224,30 +245,33 @@ export default function AgentDashboard() {
   };
 
   // Execute Withdraw: increases Limit/Balance, logs transaction
-  const handleExecuteWithdraw = async (
-    playerId: string,
-    confirmCode: string,
-    amount: number,
-    note?: string
-  ) => {
+  const handleExecuteWithdraw = async (playerId: string, withdrawCode: string, amount: number, note?: string) => {
     if (!user) return;
     const rate = user.commission_withdraw || 5;
     const commissionEarned = (amount * rate) / 100;
     const shortRef = Math.floor(100 + Math.random() * 900).toString();
-
-    const newTx: MobCashTransaction = {
+    const newTx = {
       id: 'tx_' + Date.now(),
       tx_number: `№...${shortRef}`,
       agent_id: user.agent_id,
       type: 'withdraw',
       customer_phone: playerId,
+      withdraw_code: withdrawCode,
       amount: amount,
       commission_rate: rate,
       commission_earned: commissionEarned,
-      note: note || `Retrait validé (Code: ${confirmCode})`,
+      note: note || 'Retrait joueur 1xBet',
       status: 'completed',
       created_at: new Date().toISOString(),
     };
+    
+    // Add balance
+    const newBalance = balanceAmount + amount;
+    await supabase.from('agents').update({ balance: newBalance }).eq('agent_id', user.agent_id);
+    
+    // Refresh
+    setBalanceAmount(newBalance);
+    fetchTransactions();
 
     // Update state & balances
     setBalanceAmount((prev) => prev + amount);
@@ -324,7 +348,7 @@ export default function AgentDashboard() {
           <LimitBalanceCard
             limitAmount={limitAmount}
             balanceAmount={balanceAmount}
-            currency="USD"
+            currency={currency}
             isDark={isDark}
             onRefresh={fetchTransactions}
             isRefreshing={isRefreshing}
@@ -338,14 +362,29 @@ export default function AgentDashboard() {
           />
 
           {/* Quick Services Bar (Infographic PDF: إلغاء الإيداع، التحقق، الصرافين، الدليل) */}
-          <QuickServicesBar
-            onOpenCancelDeposit={() => setIsCancelDepositOpen(true)}
-            onOpenPartnership={() => setIsPartnershipOpen(true)}
-            onOpenPrepayment={() => setIsPrepaymentOpen(true)}
-            onOpenSubagents={() => setIsSubagentsOpen(true)}
-            onOpenGuide={() => setIsGuideOpen(true)}
-            isDark={isDark}
-          />
+          <button
+            type="button"
+            onClick={() => setIsUSDTDepositOpen(true)}
+            className={`w-full rounded-3xl p-4 sm:p-5 flex items-center justify-between transition-all cursor-pointer active:scale-95 border ${
+              isDark
+                ? 'bg-slate-900/95 hover:bg-slate-800/90 border-slate-800 text-white shadow-sm'
+                : 'bg-white hover:bg-slate-50 border-slate-200/80 text-slate-800 shadow-sm'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-xs">
+                <Wallet className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <div className="text-right flex flex-col items-start">
+                <span className="font-bold text-sm sm:text-base tracking-wide">
+                  {t('deposit_usdt_btn', 'إضافة الأموال للصرافة (USDT)')}
+                </span>
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {t('deposit_usdt_desc', 'شحن رصيد الوكالة الخاص بك')}
+                </span>
+              </div>
+            </div>
+          </button>
 
           {/* Recent Transactions List (Page 46: №...113, ID, Time, +100.00) */}
           <RecentTransactionsList
@@ -380,40 +419,16 @@ export default function AgentDashboard() {
         isDark={isDark}
       />
 
-      <CancelDepositModal
-        isOpen={isCancelDepositOpen}
-        onClose={() => setIsCancelDepositOpen(false)}
-        recentDeposits={transactions.filter((t) => t.type === 'deposit')}
-        onExecuteCancel={handleExecuteCancel}
-        isDark={isDark}
-      />
+      
 
-      <PartnershipModal
-        isOpen={isPartnershipOpen}
-        onClose={() => setIsPartnershipOpen(false)}
-        agentId={user.agent_id}
-        fullName={user.first_name || user.full_name || 'Authorized Agent'}
-        country={user.country || 'المملكة العربية السعودية'}
-        city={user.city || 'الرياض'}
-        isDark={isDark}
-      />
+      
 
-      <SubagentsModal
-        isOpen={isSubagentsOpen}
-        onClose={() => setIsSubagentsOpen(false)}
-        agentId={user.agent_id}
-        depositRate={user.commission_deposit || 5}
-        withdrawRate={user.commission_withdraw || 5}
-        isDark={isDark}
-      />
+      
 
-      <AgentGuideModal
-        isOpen={isGuideOpen}
-        onClose={() => setIsGuideOpen(false)}
-        isDark={isDark}
-      />
+      
 
       <ProfileDrawer
+          onOpenSupport={() => setIsSupportOpen(true)}
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
         user={user}
@@ -439,14 +454,7 @@ export default function AgentDashboard() {
         isDark={isDark}
       />
 
-      <PrepaymentModal
-        isOpen={isPrepaymentOpen}
-        onClose={() => setIsPrepaymentOpen(false)}
-        limitAmount={limitAmount}
-        balanceAmount={balanceAmount}
-        agentId={user.agent_id}
-        isDark={isDark}
-      />
+      
     </div>
   );
 }

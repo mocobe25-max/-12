@@ -27,7 +27,7 @@ export const LimitBalanceCard: React.FC<LimitBalanceCardProps> = ({
     return new Intl.NumberFormat('fr-FR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(val);
+    }).format(val) + ' ' + currency;
   };
 
   // Calculate ratio for blue progress bar

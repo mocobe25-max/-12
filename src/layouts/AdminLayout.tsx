@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
-import { Shield, Users, PlusCircle, LogOut, LayoutDashboard, Menu, X, MonitorSmartphone } from 'lucide-react';
+import { Shield, Users, PlusCircle, LogOut, LayoutDashboard, Menu, X, MonitorSmartphone, Wallet, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
@@ -27,6 +27,8 @@ export function AdminLayout() {
     { path: '/admin/create-agent', icon: PlusCircle, label: t('create_agent') },
     { path: '/admin/manage-agents', icon: Users, label: t('manage_agents') },
     { path: '/admin/device-activation', icon: MonitorSmartphone, label: t('device_activation', 'تفعيل الأجهزة') },
+    { path: '/admin/deposits', icon: Wallet, label: t('manage_deposits', 'طلبات الإيداع (USDT)') },
+    { path: '/admin/support', icon: MessageSquare, label: t('support_tickets', 'الدعم المباشر') },
   ];
 
   const isRtl = ['ar', 'ur', 'fa'].includes(i18n.language?.split('-')[0] || 'en');
