@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Smartphone, LogOut } from 'lucide-react';
+import { Smartphone, LogOut, Copy, CheckCheck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
@@ -12,6 +12,7 @@ export default function DeviceActivation() {
   const { user, logout } = useAuthStore();
   const [activationCode, setActivationCode] = useState('');
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!user || user.status !== 'active') {
@@ -176,11 +177,25 @@ export default function DeviceActivation() {
           {t('device_activation_title', 'تفعيل الجهاز')}
         </h1>
         
-        <p className="text-gray-600 text-sm leading-relaxed mb-8">
-          {t('device_activation_desc', 'لأسباب أمنية، يرجى الاتصال بمدير حسابك وتزويده بكود التفعيل التالي:')}
-          <br/>
-          <span className="font-mono font-bold text-xl text-black block mt-2">{activationCode}</span>
-        </p>
+        <div className="text-gray-600 text-sm leading-relaxed mb-8 text-center sm:text-start">
+          <p>{t('device_activation_desc', 'لأسباب أمنية، يرجى الاتصال بمدير حسابك وتزويده بكود التفعيل التالي:')}</p>
+          <div 
+            onClick={() => {
+              navigator.clipboard.writeText(activationCode);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="mt-4 flex items-center justify-center sm:justify-start gap-3 cursor-pointer group"
+          >
+            <div className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 transition-colors group-hover:bg-gray-200">
+              <span className="font-mono font-bold text-2xl tracking-widest text-black">{activationCode}</span>
+              <div className="text-gray-400 group-hover:text-blue-600 transition-colors">
+                {copied ? <CheckCheck className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+              </div>
+            </div>
+            {copied && <span className="text-xs font-bold text-emerald-500 transition-opacity">تم النسخ</span>}
+          </div>
+        </div>
 
         <div className="flex-1 flex items-center justify-center">
           <div className="relative w-48 h-48">
