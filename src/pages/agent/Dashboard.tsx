@@ -290,7 +290,7 @@ export default function AgentDashboard() {
           amount: amount,
           commission_rate: rate,
           commission_earned: commissionEarned,
-          note: `Code: ${confirmCode}`,
+          note: `Code: ${withdrawCode}`,
           status: 'completed',
           created_at: newTx.created_at,
         },

@@ -11,6 +11,8 @@ import CreateAgent from './pages/admin/CreateAgent';
 import ManageAgents from './pages/admin/ManageAgents';
 import AgentPaymentSetup from './pages/admin/AgentPaymentSetup';
 import AdminDeviceActivation from './pages/admin/DeviceActivation';
+import AdminDeposits from './pages/admin/AdminDeposits';
+import AdminSupport from './pages/admin/AdminSupport';
 
 // Agent Pages
 import AgentLogin from './pages/agent/Login';
@@ -38,6 +40,8 @@ export default function App() {
             <Route path="manage-agents" element={<ManageAgents />} />
             <Route path="agent-payment/:id" element={<AgentPaymentSetup />} />
             <Route path="device-activation" element={<AdminDeviceActivation />} />
+            <Route path="deposits" element={<AdminDeposits />} />
+            <Route path="support" element={<AdminSupport />} />
           </Route>
 
           {/* Agent Routes */}
@@ -50,8 +54,6 @@ export default function App() {
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="suspended" element={<Suspended />} />
             <Route path="device-activation" element={<DeviceActivation />} />
-          <Route path="deposits" element={<AdminDeposits />} />
-          <Route path="support" element={<AdminSupport />} />
           </Route>
 
           {/* Catch-all 404 Route */}
