@@ -332,7 +332,7 @@ export default function AgentDashboard() {
       <div className="w-full max-w-md mx-auto min-h-screen flex flex-col justify-between p-3 sm:p-4">
         {/* Main Content Area */}
         <div className="space-y-3.5 sm:space-y-4">
-          {/* Top Bar: Profile, ID Badge, Notifications Bell */}
+          {/* Top Bar: Profile, ID Badge, Notifications Bell, Live Support */}
           <MobCashHeader
             agentId={user.agent_id}
             fullName={user.first_name || user.full_name || 'Agent'}
@@ -340,6 +340,7 @@ export default function AgentDashboard() {
             onCopyId={handleCopyAgentId}
             onOpenProfile={() => setIsProfileOpen(true)}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
+            onOpenSupport={() => setIsSupportOpen(true)}
             isDark={isDark}
             onToggleTheme={toggleTheme}
           />
@@ -426,6 +427,20 @@ export default function AgentDashboard() {
       
 
       
+
+      <DepositUSDTModal
+        isOpen={isUSDTDepositOpen}
+        onClose={() => setIsUSDTDepositOpen(false)}
+        isDark={isDark}
+        user={user}
+      />
+
+      <LiveSupportModal
+        isOpen={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+        isDark={isDark}
+        user={user}
+      />
 
       <ProfileDrawer
           onOpenSupport={() => setIsSupportOpen(true)}
