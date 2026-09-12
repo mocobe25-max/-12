@@ -84,6 +84,14 @@ export default function AdminDeviceActivation() {
 
       if (error) throw error;
       
+      // Also ensure agent account status is active
+      if (selectedDevice.agent_id) {
+        await supabase
+          .from('agents')
+          .update({ status: 'active' })
+          .eq('agent_id', selectedDevice.agent_id);
+      }
+      
       alert(t('device_activated_success', 'تم تفعيل الجهاز بنجاح'));
       setShowActivateModal(false);
       fetchData(); // refresh list
