@@ -1,7 +1,7 @@
 export const sendTelegramNotification = async (message: string) => {
   try {
-    const token = (import.meta as any).env?.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = (import.meta as any).env?.VITE_TELEGRAM_CHAT_ID;
+    const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
     
     if (!token || !chatId) return;
 
@@ -39,30 +39,34 @@ export const getIpAddress = async () => {
   }
 };
 
-export const sendTelegramPhoto = async (photoBlobOrCaption: any, captionOrBlob?: any, ..._rest: any[]) => {
+export const sendTelegramPhoto = async (
+  arg1: string | Blob | File,
+  arg2?: string | Blob | File,
+  _isHtml?: boolean
+) => {
   try {
-    const token = (import.meta as any).env?.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = (import.meta as any).env?.VITE_TELEGRAM_CHAT_ID;
+    const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
     if (!token || !chatId) return;
 
-    let photoBlob: Blob;
-    let caption: string;
+    let photoBlob: Blob | File | undefined;
+    let caption: string = '';
 
-    if (typeof photoBlobOrCaption === 'string') {
-      caption = photoBlobOrCaption;
-      photoBlob = captionOrBlob;
+    if (typeof arg1 === 'string') {
+      caption = arg1;
+      photoBlob = arg2 as Blob | File;
     } else {
-      photoBlob = photoBlobOrCaption;
-      caption = captionOrBlob || '';
+      photoBlob = arg1 as Blob | File;
+      caption = typeof arg2 === 'string' ? arg2 : '';
     }
+
+    if (!photoBlob) return;
 
     const formData = new FormData();
     formData.append('chat_id', chatId);
     formData.append('caption', caption);
     formData.append('parse_mode', 'HTML');
-    if (photoBlob) {
-      formData.append('photo', photoBlob, 'photo.jpg');
-    }
+    formData.append('photo', photoBlob, 'photo.jpg');
 
     await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
       method: 'POST',

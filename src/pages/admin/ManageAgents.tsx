@@ -79,49 +79,23 @@ export default function ManageAgents() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const targetAgent = agents.find(a => a.id === id || a.agent_id === id);
-      const agentId = targetAgent?.agent_id;
+      const { error } = await supabase
+        .from('agents')
+        .update({ status: newStatus })
+        .eq('id', id);
 
-      try {
-        await supabase
-          .from('agents')
-          .update({ status: newStatus })
-          .eq('id', id);
-      } catch (e) {
-        console.warn('Supabase agent status update note:', e);
-      }
-
-      if (agentId) {
-        if (newStatus === 'active') {
-          localStorage.setItem(`agent_active_${agentId}`, 'true');
-        } else if (newStatus === 'suspended' || newStatus === 'inactive') {
-          localStorage.removeItem(`agent_active_${agentId}`);
-        }
-
-        try {
-          const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
-          const updatedLocal = localAgents.map((a: any) => {
-            if (a.id === id || a.agent_id === agentId) {
-              return { ...a, status: newStatus };
-            }
-            return a;
-          });
-          localStorage.setItem('local_registered_agents', JSON.stringify(updatedLocal));
-        } catch(e) {}
-      }
+      if (error) throw error;
       
-      setAgents(agents.map(a => (a.id === id || a.agent_id === agentId) ? { ...a, status: newStatus } : a));
+      setAgents(agents.map(a => a.id === id ? { ...a, status: newStatus } : a));
       
-      const agent = targetAgent;
+      const agent = agents.find(a => a.id === id);
       if (agent) {
-        try {
-          await supabase.from('activities').insert([
-            {
-              agent_id: agent.agent_id,
-              action: `Status updated to ${newStatus} by admin`,
-            },
-          ]);
-        } catch(e) {}
+        await supabase.from('activities').insert([
+          {
+            agent_id: agent.agent_id,
+            action: `Status updated to ${newStatus} by admin`,
+          },
+        ]);
 
         // Send Telegram notification
         try {

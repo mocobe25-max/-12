@@ -69,34 +69,22 @@ export const LiveSupportModal: React.FC<LiveSupportModalProps> = ({
     if (!newMessage.trim()) return;
     
     setLoading(true);
-    const msgText = newMessage.trim();
+    const msg = newMessage.trim();
     setNewMessage('');
-
-    const newMsgObj = {
-      id: 'msg_' + Date.now(),
-      agent_id: user?.agent_id,
-      sender: 'agent',
-      message: msgText,
-      created_at: new Date().toISOString()
-    };
     
-    // Immediate optimistic update
-    setMessages(prev => [...prev, newMsgObj]);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-
     try {
       await supabase.from('support_messages').insert([
         {
           agent_id: user?.agent_id,
           sender: 'agent',
-          message: msgText
+          message: msg
         }
       ]);
       
-      const tgramMsg = `📩 <b>New Support Message</b>\n\n<b>From:</b> ${user?.full_name} (<code>${user?.agent_id}</code>)\n<b>Message:</b>\n${msgText}\n\n<i>Reply from Admin Panel.</i>`;
+      const tgramMsg = `📩 <b>New Support Message</b>\n\n<b>From:</b> ${user?.full_name} (<code>${user?.agent_id}</code>)\n<b>Message:</b>\n${msg}\n\n<i>Reply from Admin Panel.</i>`;
       await sendTelegramMessage(tgramMsg);
     } catch (err) {
-      console.warn('Support msg note:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }

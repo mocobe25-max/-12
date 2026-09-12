@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Bell, Copy, Check, LogOut, Globe, Moon, Sun, ShieldCheck, MessageSquare } from 'lucide-react';
+import { User, Bell, Copy, Check, LogOut, Globe, Moon, Sun, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface MobCashHeaderProps {
@@ -9,7 +9,6 @@ interface MobCashHeaderProps {
   onCopyId: () => void;
   onOpenProfile: () => void;
   onOpenNotifications: () => void;
-  onOpenSupport?: () => void;
   unreadCount?: number;
   isDark: boolean;
   onToggleTheme: () => void;
@@ -22,7 +21,6 @@ export const MobCashHeader: React.FC<MobCashHeaderProps> = ({
   onCopyId,
   onOpenProfile,
   onOpenNotifications,
-  onOpenSupport,
   unreadCount = 2,
   isDark,
   onToggleTheme,
@@ -70,27 +68,8 @@ export const MobCashHeader: React.FC<MobCashHeaderProps> = ({
         )}
       </button>
 
-      {/* Right: Notifications & Support Buttons */}
+      {/* Right: Notifications Bell (Page 9 & 46) & Theme toggle */}
       <div className="flex items-center gap-2">
-        {onOpenSupport && (
-          <button
-            onClick={onOpenSupport}
-            className={`w-11 h-11 rounded-full flex items-center justify-center relative transition-all cursor-pointer shadow-sm active:scale-95 ${
-              isDark
-                ? 'bg-blue-900/40 hover:bg-blue-900/60 text-blue-400 border border-blue-700/50'
-                : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 shadow-slate-200/50'
-            }`}
-            title={t('agent_support_chat', 'الدعم المباشر (محادثة حية)')}
-            aria-label="Support"
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-            </span>
-          </button>
-        )}
-
         <button
           onClick={onToggleTheme}
           className={`w-9 h-9 rounded-full hidden sm:flex items-center justify-center transition-all cursor-pointer ${

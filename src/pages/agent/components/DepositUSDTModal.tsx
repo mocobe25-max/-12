@@ -45,14 +45,12 @@ export const DepositUSDTModal: React.FC<DepositUSDTModalProps> = ({
         // Pick random
         const randomAddr = data[Math.floor(Math.random() * data.length)];
         setAdminAddress(randomAddr.address);
-        setNetwork(randomAddr.network || 'TRC20');
+        setNetwork(randomAddr.network);
       } else {
-        setAdminAddress('TQj3x8YvR9z2P4kL7mW1nQ8vB6xZ9mK3pL');
-        setNetwork('TRC20');
+        setAdminAddress('TUSDT_ADDRESS_NOT_CONFIGURED');
       }
     } catch (err) {
-      setAdminAddress('TQj3x8YvR9z2P4kL7mW1nQ8vB6xZ9mK3pL');
-      setNetwork('TRC20');
+      console.error(err);
     }
   };
 
