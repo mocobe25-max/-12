@@ -87,6 +87,10 @@ export async function ensureLanguageTranslated(i18nInstance: any, lang: string) 
       const translatedDict = await autoTranslateLanguage(lang);
       if (translatedDict) {
         i18nInstance.addResourceBundle(lang, 'translation', translatedDict, true, true);
+        if (i18nInstance.language === lang) {
+          // Force react-i18next to re-render with the new translations
+          setTimeout(() => i18nInstance.changeLanguage(lang), 10);
+        }
       }
     }
   } catch (e) {

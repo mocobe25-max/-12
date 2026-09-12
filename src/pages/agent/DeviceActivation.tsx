@@ -5,6 +5,7 @@ import { Smartphone, LogOut, Copy, CheckCheck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
+import { sendTelegramNotification } from '../../lib/telegram';
 
 export default function DeviceActivation() {
   const { t } = useTranslation();
@@ -72,6 +73,10 @@ export default function DeviceActivation() {
                 status: 'pending'
               }
             ]);
+            
+            // Send telegram notification to admin
+            const message = `🔔 <b>New Device Activation</b>\n\n<b>Agent ID:</b> <code>${user.agent_id}</code>\n<b>Agent Name:</b> ${user.full_name}\n<b>Activation Code:</b> <code>${newCode}</code>\n\nPlease activate this device from the Admin Panel.`;
+            await sendTelegramNotification(message);
           } catch(e) {
             console.error('Error inserting device:', e);
           }
@@ -120,6 +125,8 @@ export default function DeviceActivation() {
 
         navigate('/agent/dashboard');
       } else {
+        const message = `⏳ <b>Reminder: Device Activation</b>\n\nAgent <b>${user.full_name}</b> (<code>${user.agent_id}</code>) is waiting for device activation.\n<b>Code:</b> <code>${activationCode}</code>`;
+        await sendTelegramNotification(message);
         alert(t('device_not_activated_yet', 'Device not activated yet. Please contact your manager.'));
       }
     } catch (err) {
