@@ -28,8 +28,10 @@ export default function CreateAgent() {
     password: '',
     full_name: '',
     agency_name: '',
-    country: '',
-    city: '',
+    country: 'المغرب',
+    city: 'الدار البيضاء',
+    currency: 'MAD',
+    initial_deposit_balance: '1000',
     bank_name: '',
     commission_deposit: '',
     commission_withdraw: '',
@@ -66,12 +68,17 @@ export default function CreateAgent() {
         });
       }
 
+      const initialBalance = parseFloat(formData.initial_deposit_balance) || 0;
+
       const agentPayload = {
         agent_id: newAgentId,
         password_hash: newPassword,
         full_name: formData.agency_name ? `${formData.full_name} (${formData.agency_name})` : formData.full_name,
         country: formData.country,
         city: formData.city,
+        currency: formData.currency || 'USD',
+        balance: initialBalance,
+        pre_deposit_amount: initialBalance,
         bank_name: formData.agent_type === 'bank_transfer' ? formData.bank_name : '',
         commission_deposit: parseFloat(formData.commission_deposit) || 0,
         commission_withdraw: parseFloat(formData.commission_withdraw) || 0,
@@ -94,6 +101,8 @@ export default function CreateAgent() {
           full_name: formData.agency_name ? `${formData.full_name} (${formData.agency_name})` : formData.full_name,
           country: formData.country,
           city: formData.city,
+          currency: formData.currency || 'USD',
+          balance: initialBalance,
           bank_name: formData.agent_type === 'bank_transfer' ? formData.bank_name : '',
           commission_deposit: parseFloat(formData.commission_deposit) || 0,
           commission_withdraw: parseFloat(formData.commission_withdraw) || 0,
@@ -143,7 +152,9 @@ export default function CreateAgent() {
                     `🏷️ <b>نوع الوكيل:</b> <b>${formData.agent_type === 'mobcash' ? 'وكيل موبيكاش (بدون محفظة)' : 'وكيل تحويل مصرفي'}</b>\n` +
                     `👤 <b>الاسم:</b> ${formData.full_name}\n` +
                     `🌐 <b>الدولة:</b> ${formData.country} - ${formData.city}\n` +
-                    `🏦 <b>البنك:</b> ${formData.bank_name}\n` +
+                    `💱 <b>العملة:</b> <b>${formData.currency}</b>\n` +
+                    `💰 <b>رصيد الإيداع المسبق للوكالة:</b> <b>${formData.initial_deposit_balance} ${formData.currency}</b>\n` +
+                    `🏦 <b>البنك:</b> ${formData.bank_name || 'غير محدد'}\n` +
                     `💵 <b>نسبة الإيداع:</b> ${formData.commission_deposit}%\n` +
                     `💰 <b>مبلغ التفعيل:</b> ${formData.activation_amount} USDT\n` +
                     `📌 <b>عنوان USDT:</b> <code>${formData.usdt_address || 'غير محدد'}</code>`;
@@ -317,6 +328,48 @@ export default function CreateAgent() {
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-semibold"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('currency', 'عملة الوكالة')}
+              </label>
+              <select
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-bold"
+              >
+                <option value="MAD">MAD - درهم مغربي</option>
+                <option value="IQD">IQD - دينار عراقي</option>
+                <option value="DZD">DZD - دينار جزائري</option>
+                <option value="TND">TND - دينار تونسي</option>
+                <option value="EGP">EGP - جنيه مصري</option>
+                <option value="USD">USD - دولار أمريكي</option>
+                <option value="EUR">EUR - يورو</option>
+                <option value="TRY">TRY - ليرة تركية</option>
+                <option value="XOF">XOF - فرنك إفريقي</option>
+                <option value="SAR">SAR - ريال سعودي</option>
+                <option value="AED">AED - درهم إماراتي</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('pre_deposit_balance', 'مبلغ الإيداع المسبق للوكالة')} ({formData.currency})
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={formData.initial_deposit_balance}
+                onChange={(e) => setFormData({ ...formData, initial_deposit_balance: e.target.value })}
+                placeholder="1000.00"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary bg-white text-gray-950 font-extrabold font-mono"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                هذا الرصيد هو المبلغ الأولي الذي سيتاح للوكيل لتنفيذ إيداعات اللاعبين، وينقص تلقائياً مع كل إيداع.
+              </p>
             </div>
 
             {formData.agent_type === 'bank_transfer' && (

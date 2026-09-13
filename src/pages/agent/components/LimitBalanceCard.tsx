@@ -63,7 +63,7 @@ export const LimitBalanceCard: React.FC<LimitBalanceCardProps> = ({
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
               } ${isRefreshing ? 'animate-spin' : ''}`}
-              title="تحديث الرصيد"
+              title={t('refresh_balance', 'تحديث الرصيد')}
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -76,7 +76,7 @@ export const LimitBalanceCard: React.FC<LimitBalanceCardProps> = ({
                 ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                 : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
             }`}
-            title={showValues ? 'إخفاء الرصيد' : 'إظهار الرصيد'}
+            title={showValues ? t('hide_balance', 'إخفاء الرصيد') : t('show_balance', 'إظهار الرصيد')}
             aria-label="Toggle balance visibility"
           >
             {showValues ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5 text-slate-400" />}

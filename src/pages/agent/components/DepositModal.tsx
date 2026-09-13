@@ -7,18 +7,24 @@ interface DepositModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentLimit: number;
+  availableBalance?: number;
+  currency?: string;
   depositRate: number;
   onExecuteDeposit: (playerId: string, amount: number, note?: string) => Promise<any>;
   isDark: boolean;
+  onOpenDepositUSDT?: () => void;
 }
 
 export const DepositModal: React.FC<DepositModalProps> = ({
   isOpen,
   onClose,
   currentLimit,
+  availableBalance,
+  currency = 'USD',
   depositRate,
   onExecuteDeposit,
   isDark,
+  onOpenDepositUSDT,
 }) => {
   const { t } = useTranslation();
   const [playerId, setPlayerId] = useState('');
@@ -33,7 +39,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
   const numAmount = parseFloat(amount) || 0;
   const commissionEarned = (numAmount * (depositRate || 5)) / 100;
-  const isInsufficient = numAmount > currentLimit;
+  const effectiveMax = availableBalance !== undefined ? availableBalance : currentLimit;
+  const isInsufficient = numAmount > effectiveMax;
 
   const handleQuickAmount = (val: number) => {
     setAmount(val.toString());
@@ -72,7 +79,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
   const handleCopyReceipt = () => {
     if (successReceipt?.id) {
       navigator.clipboard.writeText(
-        `MobCash Receipt: Deposit $${numAmount} to Player ID: ${playerId} - Ref: ${successReceipt.id}`
+        `MobCash Receipt: Deposit ${numAmount} ${currency} to Player ID: ${playerId} - Ref: ${successReceipt.id}`
       );
       setCopiedId(true);
       setTimeout(() => setCopiedId(false), 2000);
@@ -99,7 +106,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 {t('player_deposit_title', 'إيداع للاعب')} (Dépôt)
               </h3>
               <p className="text-xs text-slate-400">
-                {t('available_limit', 'الحد المتاح')}: ${currentLimit.toFixed(2)}
+                {t('available_solde', 'رصيد الصرافة المتاح')}: <span className="font-mono font-bold text-emerald-500">{effectiveMax.toLocaleString()} {currency}</span>
               </p>
             </div>
           </div>
@@ -140,10 +147,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                     <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-                    {t('amount_to_deposit', 'المبلغ')}
+                    {t('amount_to_deposit', 'المبلغ')} ({currency})
                   </label>
                   <span className="text-[11px] text-slate-400">
-                    {t('min_deposit', 'الحد الأدنى $15')}
+                    {t('min_deposit', 'الحد الأدنى')} 10 {currency}
                   </span>
                 </div>
                 <div className="relative">
@@ -162,14 +169,14 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     }`}
                   />
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono font-bold text-xs text-slate-400">
-                    USD
+                    {currency}
                   </span>
                 </div>
               </div>
 
               {/* Quick Preset Buttons */}
               <div className="flex items-center gap-2 flex-wrap">
-                {[15, 25, 50, 100, 200, 500].map((val) => (
+                {[50, 100, 200, 500, 1000, 2000].map((val) => (
                   <button
                     key={val}
                     type="button"
@@ -182,7 +189,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
-                    ${val}
+                    {val} {currency}
                   </button>
                 ))}
               </div>
@@ -204,18 +211,32 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     {t('expected_profit', 'ربحك من العملية')}:
                   </span>
                   <span className="font-mono font-bold text-sm text-emerald-500">
-                    +${commissionEarned.toFixed(2)}
+                    +{commissionEarned.toFixed(2)} {currency}
                   </span>
                 </div>
               </div>
 
               {/* Warning if insufficient limit */}
               {isInsufficient && (
-                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>
-                    المبلغ المطلوب يتجاوز حد نقطة البيع الحالي (${currentLimit.toFixed(2)}).
-                  </span>
+                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs space-y-2">
+                  <div className="flex items-center gap-2 font-bold">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>
+                      رصيد الصرافة غير كافٍ لتنفيذ هذا الإيداع ({effectiveMax.toFixed(2)} {currency}).
+                    </span>
+                  </div>
+                  {onOpenDepositUSDT && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenDepositUSDT();
+                      }}
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition-colors cursor-pointer"
+                    >
+                      شحن رصيد الصرافة الآن عبر USDT
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -252,7 +273,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                   تم الإيداع بنجاح!
                 </h4>
                 <p className="text-xs text-slate-400 mt-1">
-                  تم تحويل ${numAmount} إلى حساب اللاعب فورا
+                  تم تحويل {numAmount} {currency} إلى حساب اللاعب فوراً
                 </p>
               </div>
 
@@ -274,12 +295,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">المبلغ المشحون:</span>
-                  <span className="font-mono font-bold text-emerald-500">${numAmount}</span>
+                  <span className="font-mono font-bold text-emerald-500">{numAmount} {currency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">العمولة المكتسبة:</span>
                   <span className="font-mono font-bold text-emerald-500">
-                    +${commissionEarned.toFixed(2)}
+                    +{commissionEarned.toFixed(2)} {currency}
                   </span>
                 </div>
                 <div className="flex justify-between">

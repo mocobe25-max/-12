@@ -88,8 +88,9 @@ export function LanguageSwitcher({ variant = 'dark' }: LanguageSwitcherProps) {
   }, [searchQuery]);
 
   const handleSelectLanguage = (code: string) => {
+    localStorage.setItem('i18nextLng', code);
     i18n.changeLanguage(code);
-    const rtlCodes = ['ar', 'ur', 'fa'];
+    const rtlCodes = ['ar', 'ur', 'fa', 'he'];
     const isRtl = rtlCodes.includes(code.split('-')[0]);
     document.documentElement.setAttribute('dir', isRtl ? 'rtl' : 'ltr');
     document.documentElement.setAttribute('lang', code);

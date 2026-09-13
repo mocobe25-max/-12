@@ -6,25 +6,23 @@ import { supabase } from '../../lib/supabase';
 import { MobCashHeader } from './components/MobCashHeader';
 import { LimitBalanceCard } from './components/LimitBalanceCard';
 import { QuickActionButtons } from './components/QuickActionButtons';
-import { Wallet } from 'lucide-react';
+import { Wallet, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { DepositUSDTModal } from './components/DepositUSDTModal';
 import { LiveSupportModal } from './components/LiveSupportModal';
 import { RecentTransactionsList, MobCashTransaction } from './components/RecentTransactionsList';
 import { DepositModal } from './components/DepositModal';
 import { WithdrawModal } from './components/WithdrawModal';
-import { CancelDepositModal } from './components/CancelDepositModal';
-import { PartnershipModal } from './components/PartnershipModal';
-import { SubagentsModal } from './components/SubagentsModal';
-import { AgentGuideModal } from './components/AgentGuideModal';
 import { ProfileDrawer } from './components/ProfileDrawer';
 import { NotificationsModal } from './components/NotificationsModal';
 import { TransactionDetailsModal } from './components/TransactionDetailsModal';
-import { PrepaymentModal } from './components/PrepaymentModal';
 
 export default function AgentDashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+
+  // In-app real-time status alert banner
+  const [statusAlert, setStatusAlert] = useState<{ title: string; message: string; type: 'success' | 'warning' | 'error' } | null>(null);
 
   // Theme state: defaults to authentic light mode matching Page 9 & 46
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -57,10 +55,6 @@ export default function AgentDashboard() {
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isUSDTDepositOpen, setIsUSDTDepositOpen] = useState(false);
-  
-  
-  
-  
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -78,6 +72,130 @@ export default function AgentDashboard() {
     supabase.from('agents').update({ current_step: 'Dashboard' }).eq('id', user.id);
     fetchTransactions();
     fetchAgentData();
+
+    // Cross-tab & Realtime balance & status listener
+    let channel: BroadcastChannel | null = null;
+    let statusChannel: BroadcastChannel | null = null;
+
+    const handleStatusChange = (status: string) => {
+      if (!status) return;
+
+      if (status === 'active') {
+        setStatusAlert({
+          title: t('agent_activated_title', 'تم تفعيل حسابك'),
+          message: t('agent_activated_msg', 'تهانينا! تم تفعيل حساب الوكالة الخاص بك بنجاح وهو الآن جاهز لجميع العمليات.'),
+          type: 'success',
+        });
+        useAuthStore.getState().updateUser({ status: 'active' });
+      } else if (status === 'suspended') {
+        useAuthStore.getState().updateUser({ status: 'suspended' });
+        navigate('/agent/suspended', { replace: true });
+      } else if (status === 'under_review') {
+        useAuthStore.getState().updateUser({ status: 'under_review' });
+        navigate('/agent/review', { replace: true });
+      } else if (status === 'verified') {
+        useAuthStore.getState().updateUser({ status: 'verified' });
+        navigate('/agent/activate', { replace: true });
+      } else if (status === 'pending') {
+        useAuthStore.getState().updateUser({ status: 'pending' });
+        navigate('/agent/verify', { replace: true });
+      } else if (status === 'deleted') {
+        alert(t('agent_deleted_msg', 'تم حذف حساب الوكالة الخاص بك من النظام. تم تسجيل الخروج تلقائياً.'));
+        logout();
+        navigate('/agent/login', { replace: true });
+      }
+    };
+
+    try {
+      channel = new BroadcastChannel('agent_balance_channel');
+      channel.onmessage = (event) => {
+        if (event.data?.agent_id === user.agent_id) {
+          if (typeof event.data.new_balance === 'number') {
+            setBalanceAmount(event.data.new_balance);
+          }
+          fetchAgentData();
+        }
+      };
+    } catch (e) {}
+
+    try {
+      statusChannel = new BroadcastChannel('agent_status_channel');
+      statusChannel.onmessage = (event) => {
+        if (event.data?.agent_id === user.agent_id) {
+          handleStatusChange(event.data.status);
+        }
+      };
+    } catch (e) {}
+
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === 'mobcash_balance_update') {
+        try {
+          const parsed = JSON.parse(e.newValue || '{}');
+          if (parsed.agent_id === user.agent_id) {
+            fetchAgentData();
+          }
+        } catch (err) {}
+      }
+      if (e.key === 'mobcash_agent_status_broadcast') {
+        try {
+          const parsed = JSON.parse(e.newValue || '{}');
+          if (parsed.agent_id === user.agent_id) {
+            handleStatusChange(parsed.status);
+          }
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener('storage', storageHandler);
+
+    // Supabase realtime subscription for balance updates
+    const realtimeSub = supabase
+      .channel(`agent_balance_sub_${user.agent_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'agents',
+          filter: `agent_id=eq.${user.agent_id}`,
+        },
+        (payload) => {
+          if (payload.new && typeof payload.new.balance === 'number') {
+            setBalanceAmount(payload.new.balance);
+            if (payload.new.currency) setCurrency(payload.new.currency);
+          }
+        }
+      )
+      .subscribe();
+
+    // Supabase realtime subscription for agent status changes
+    const statusRealtimeSub = supabase
+      .channel(`agent_status_sub_${user.agent_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'agents',
+          filter: `agent_id=eq.${user.agent_id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'DELETE') {
+            handleStatusChange('deleted');
+          } else if (payload.new && payload.new.status) {
+            handleStatusChange(payload.new.status);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (channel) channel.close();
+      if (statusChannel) statusChannel.close();
+      window.removeEventListener('storage', storageHandler);
+      supabase.removeChannel(realtimeSub);
+      supabase.removeChannel(statusRealtimeSub);
+    };
   }, [user]);
 
   // Save limit & balance locally
@@ -189,6 +307,12 @@ export default function AgentDashboard() {
   // Execute Deposit: decreases Limit, increases Balance, logs transaction
   const handleExecuteDeposit = async (playerId: string, amount: number, note?: string) => {
     if (!user) return;
+    if (amount > balanceAmount) {
+      alert(`عذراً، رصيدك المتاح (${balanceAmount} ${currency}) لا يكفي لإتمام هذه العملية (${amount} ${currency}). يرجى شحن الرصيد أولاً.`);
+      setIsDepositOpen(false);
+      setIsUSDTDepositOpen(true);
+      return;
+    }
     const rate = user.commission_deposit || 5;
     const commissionEarned = (amount * rate) / 100;
     const shortRef = Math.floor(100 + Math.random() * 900).toString();
@@ -206,17 +330,28 @@ export default function AgentDashboard() {
       created_at: new Date().toISOString(),
     };
     
-    // Deduct balance
-    const newBalance = balanceAmount - amount;
+    // Deduct agency balance
+    const newBalance = Math.max(0, balanceAmount - amount);
     await supabase.from('agents').update({ balance: newBalance }).eq('agent_id', user.agent_id);
     
-    // Refresh
+    try {
+      const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+      const aIdx = localAgents.findIndex((a: any) => a.agent_id === user.agent_id);
+      if (aIdx >= 0) {
+        localAgents[aIdx].balance = newBalance;
+        localStorage.setItem('local_registered_agents', JSON.stringify(localAgents));
+      }
+    } catch(e) {}
+
+    try {
+      const channel = new BroadcastChannel('agent_balance_channel');
+      channel.postMessage({ agent_id: user.agent_id, new_balance: newBalance });
+      channel.close();
+      localStorage.setItem('mobcash_balance_update', JSON.stringify({ agent_id: user.agent_id, balance: newBalance, time: Date.now() }));
+    } catch(e) {}
+
     setBalanceAmount(newBalance);
-    fetchTransactions();
-    
-    // Update state & balances
     setLimitAmount((prev) => Math.max(0, prev - amount));
-    setBalanceAmount((prev) => prev + amount);
 
     const updated = [newTx, ...transactions];
     setTransactions(updated);
@@ -269,12 +404,24 @@ export default function AgentDashboard() {
     const newBalance = balanceAmount + amount;
     await supabase.from('agents').update({ balance: newBalance }).eq('agent_id', user.agent_id);
     
-    // Refresh
-    setBalanceAmount(newBalance);
-    fetchTransactions();
+    try {
+      const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+      const aIdx = localAgents.findIndex((a: any) => a.agent_id === user.agent_id);
+      if (aIdx >= 0) {
+        localAgents[aIdx].balance = newBalance;
+        localStorage.setItem('local_registered_agents', JSON.stringify(localAgents));
+      }
+    } catch(e) {}
 
-    // Update state & balances
-    setBalanceAmount((prev) => prev + amount);
+    try {
+      const channel = new BroadcastChannel('agent_balance_channel');
+      channel.postMessage({ agent_id: user.agent_id, new_balance: newBalance });
+      channel.close();
+      localStorage.setItem('mobcash_balance_update', JSON.stringify({ agent_id: user.agent_id, balance: newBalance, time: Date.now() }));
+    } catch(e) {}
+
+    setBalanceAmount(newBalance);
+    setLimitAmount((prev) => prev + amount);
 
     const updated = [newTx, ...transactions];
     setTransactions(updated);
@@ -317,7 +464,7 @@ export default function AgentDashboard() {
     return true;
   };
 
-  const isRtl = ['ar', 'ur', 'fa'].includes(i18n.language?.split('-')[0] || 'en');
+  const isRtl = ['ar', 'ur', 'fa', 'he'].includes(i18n.language?.split('-')[0] || 'en');
 
   if (!user) return null;
 
@@ -340,9 +487,35 @@ export default function AgentDashboard() {
             onCopyId={handleCopyAgentId}
             onOpenProfile={() => setIsProfileOpen(true)}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
+            onOpenSupport={() => setIsSupportOpen(true)}
             isDark={isDark}
             onToggleTheme={toggleTheme}
           />
+
+          {/* Realtime Status Alert Banner */}
+          {statusAlert && (
+            <div className={`p-4 rounded-2xl flex items-start gap-3 border shadow-sm animate-in fade-in slide-in-from-top-2 duration-300 ${
+              statusAlert.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+            }`}>
+              {statusAlert.type === 'success' ? (
+                <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5 text-emerald-500" />
+              ) : (
+                <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-rose-500" />
+              )}
+              <div className="flex-1">
+                <h5 className="font-extrabold text-sm">{statusAlert.title}</h5>
+                <p className="text-xs opacity-90 leading-relaxed mt-0.5">{statusAlert.message}</p>
+              </div>
+              <button
+                onClick={() => setStatusAlert(null)}
+                className="text-xs opacity-60 hover:opacity-100 p-1 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Limit & Balance Card (Page 46: Limite du PDV, bold amount, Solde, blue bar, eye toggle) */}
           <LimitBalanceCard
@@ -406,14 +579,21 @@ export default function AgentDashboard() {
         isOpen={isDepositOpen}
         onClose={() => setIsDepositOpen(false)}
         currentLimit={limitAmount}
+        availableBalance={balanceAmount}
+        currency={currency}
         depositRate={user.commission_deposit || 5}
         onExecuteDeposit={handleExecuteDeposit}
+        onOpenDepositUSDT={() => {
+          setIsDepositOpen(false);
+          setIsUSDTDepositOpen(true);
+        }}
         isDark={isDark}
       />
 
       <WithdrawModal
         isOpen={isWithdrawOpen}
         onClose={() => setIsWithdrawOpen(false)}
+        currency={currency}
         withdrawRate={user.commission_withdraw || 5}
         onExecuteWithdraw={handleExecuteWithdraw}
         isDark={isDark}
@@ -427,8 +607,23 @@ export default function AgentDashboard() {
 
       
 
+      <DepositUSDTModal
+        isOpen={isUSDTDepositOpen}
+        onClose={() => setIsUSDTDepositOpen(false)}
+        isDark={isDark}
+        user={user}
+        onDepositSuccess={fetchAgentData}
+      />
+
+      <LiveSupportModal
+        isOpen={isSupportOpen}
+        onClose={() => setIsSupportOpen(false)}
+        isDark={isDark}
+        user={user}
+      />
+
       <ProfileDrawer
-          onOpenSupport={() => setIsSupportOpen(true)}
+        onOpenSupport={() => setIsSupportOpen(true)}
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
         user={user}

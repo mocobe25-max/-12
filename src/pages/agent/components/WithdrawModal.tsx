@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 interface WithdrawModalProps {
   isOpen: boolean;
   onClose: () => void;
+  currency?: string;
   withdrawRate: number;
   onExecuteWithdraw: (playerId: string, code: string, amount: number, note?: string) => Promise<any>;
   isDark: boolean;
@@ -13,6 +14,7 @@ interface WithdrawModalProps {
 export const WithdrawModal: React.FC<WithdrawModalProps> = ({
   isOpen,
   onClose,
+  currency = 'USD',
   withdrawRate,
   onExecuteWithdraw,
   isDark,
@@ -161,7 +163,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                     <DollarSign className="w-3.5 h-3.5 text-rose-500" />
-                    {t('amount_to_withdraw', 'المبلغ المطلوب سحبه')}
+                    {t('amount_to_withdraw', 'المبلغ المطلوب سحبه')} ({currency})
                   </label>
                 </div>
                 <div className="relative">
@@ -180,14 +182,14 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                     }`}
                   />
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono font-bold text-xs text-slate-400">
-                    USD
+                    {currency}
                   </span>
                 </div>
               </div>
 
               {/* Quick Amount Buttons */}
               <div className="flex items-center gap-2 flex-wrap">
-                {[20, 50, 100, 200, 500, 1000].map((val) => (
+                {[50, 100, 200, 500, 1000, 2000].map((val) => (
                   <button
                     key={val}
                     type="button"
@@ -200,7 +202,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
-                    ${val}
+                    {val} {currency}
                   </button>
                 ))}
               </div>
@@ -222,7 +224,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                     {t('expected_profit', 'ربحك من السحب')}:
                   </span>
                   <span className="font-mono font-bold text-sm text-rose-500">
-                    +${commissionEarned.toFixed(2)}
+                    +{commissionEarned.toFixed(2)} {currency}
                   </span>
                 </div>
               </div>
@@ -286,12 +288,12 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">المبلغ المستلم:</span>
-                  <span className="font-mono font-bold text-rose-500">${numAmount}</span>
+                  <span className="font-mono font-bold text-rose-500">{numAmount} {currency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">العمولة المكتسبة:</span>
                   <span className="font-mono font-bold text-emerald-500">
-                    +${commissionEarned.toFixed(2)}
+                    +{commissionEarned.toFixed(2)} {currency}
                   </span>
                 </div>
                 <div className="flex justify-between">
