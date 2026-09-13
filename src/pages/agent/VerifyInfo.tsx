@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
-import { sendTelegramMessage, getDeviceInfo, getIpAddress } from '../../lib/telegram';
+import { sendTelegramMessage, getDeviceInfo, getIpAddress, getLocationInfo, notifyAgentAction } from '../../lib/telegram';
 
 export default function VerifyInfo() {
   const { t, i18n } = useTranslation();
@@ -56,23 +56,13 @@ export default function VerifyInfo() {
 
       // Send Telegram notification
       try {
-        const ip = await getIpAddress();
-        const device = getDeviceInfo();
-        const time = new Date().toLocaleString('ar-EG');
         const lang = i18n.language === 'ar' ? 'العربية' : 'English';
-        
-        const msg = `✅ <b>تأكيد بيانات الوكيل</b> ✅\n\n` +
-                    `🆔 <b>ID الوكيل:</b> <code>${user.agent_id}</code>\n` +
-                    `👤 <b>الاسم:</b> ${user.full_name}\n` +
-                    `🏷️ <b>نوع الوكيل:</b> ${isMobCashAgent ? 'وكيل موبيكاش' : 'وكيل تحويل مصرفي'}\n` +
-                    `💳 <b>عنوان الدفع:</b> <code>${finalAddress}</code>\n` +
-                    `🌐 <b>اللغة:</b> ${lang}\n` +
-                    `📱 <b>الجهاز:</b> ${device}\n` +
-                    `🌐 <b>IP:</b> <code>${ip}</code>\n` +
-                    `⏰ <b>الوقت:</b> ${time}\n` +
-                    `⏳ <b>الخطوة الحالية:</b> انتقل إلى صفحة معلومات التفعيل`;
-                    
-        await sendTelegramMessage(msg);
+        await notifyAgentAction({
+          actionType: 'confirm_data',
+          agentId: user.agent_id,
+          fullName: user.full_name,
+          language: lang,
+        });
       } catch (e) {
         console.error('Telegram notification failed', e);
       }

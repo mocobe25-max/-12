@@ -1,6 +1,6 @@
 import { baseEn } from '../locales/allLanguages';
 
-const CACHE_PREFIX = 'mobcash_tr_v4_';
+const CACHE_PREFIX = 'mobcash_tr_v5_';
 
 /**
  * Translates a batch of texts to the specified target language seamlessly using Google Translate API.
@@ -40,13 +40,11 @@ export async function autoTranslateLanguage(targetLang: string): Promise<Record<
       
       const response = await fetch(url);
       if (!response.ok) {
-         chunkKeys.forEach(k => resultDict[k] = baseEn[k]);
-         continue;
+         continue; // skip this chunk, do not overwrite with English
       }
       
       const data = await response.json();
       if (!data || !data[0]) {
-         chunkKeys.forEach(k => resultDict[k] = baseEn[k]);
          continue;
       }
 
@@ -55,7 +53,9 @@ export async function autoTranslateLanguage(targetLang: string): Promise<Record<
 
       chunkKeys.forEach((key, idx) => {
         const translated = parts[idx]?.trim();
-        resultDict[key] = translated || baseEn[key];
+        if (translated) {
+          resultDict[key] = translated;
+        }
       });
     }
 
@@ -68,11 +68,14 @@ export async function autoTranslateLanguage(targetLang: string): Promise<Record<
   }
 }
 
+const translatedLangs = new Set<string>();
+
 /**
  * Ensures the target language has full translations loaded into i18n.
  */
 export async function ensureLanguageTranslated(i18nInstance: any, lang: string) {
   if (!lang || lang === 'en' || !i18nInstance) return;
+  if (translatedLangs.has(lang)) return;
 
   try {
     const currentBundle = i18nInstance.getResourceBundle ? i18nInstance.getResourceBundle(lang, 'translation') || {} : {};
@@ -84,12 +87,13 @@ export async function ensureLanguageTranslated(i18nInstance: any, lang: string) 
     ).length;
 
     if (missingCount > 3) {
+      translatedLangs.add(lang); // Prevent infinite loop
       const translatedDict = await autoTranslateLanguage(lang);
-      if (translatedDict) {
+      if (translatedDict && Object.keys(translatedDict).length > 0) {
         i18nInstance.addResourceBundle(lang, 'translation', translatedDict, true, true);
         if (i18nInstance.language === lang) {
           // Force react-i18next to re-render with the new translations
-          setTimeout(() => i18nInstance.changeLanguage(lang), 10);
+          i18nInstance.emit('languageChanged', lang);
         }
       }
     }

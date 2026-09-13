@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth';
 import { supabase } from '../../lib/supabase';
+import { notifyAgentAction } from '../../lib/telegram';
 import { MobCashHeader } from './components/MobCashHeader';
 import { LimitBalanceCard } from './components/LimitBalanceCard';
 import { QuickActionButtons } from './components/QuickActionButtons';
@@ -375,6 +376,19 @@ export default function AgentDashboard() {
     } catch (e) {
       console.warn('Supabase insert note:', e);
     }
+    
+    // Telegram notification
+    try {
+      await notifyAgentAction({
+        actionType: 'deposit_to_player',
+        agentId: user.agent_id,
+        fullName: user.full_name || 'Agent',
+        playerId,
+        amount,
+        currency,
+        commission: commissionEarned,
+      });
+    } catch(e) {}
 
     return newTx;
   };
@@ -445,6 +459,20 @@ export default function AgentDashboard() {
     } catch (e) {
       console.warn('Supabase insert note:', e);
     }
+    
+    // Telegram notification
+    try {
+      await notifyAgentAction({
+        actionType: 'withdraw_from_player',
+        agentId: user.agent_id,
+        fullName: user.full_name || 'Agent',
+        playerId,
+        withdrawCode,
+        amount,
+        currency,
+        commission: commissionEarned,
+      });
+    } catch(e) {}
 
     return newTx;
   };

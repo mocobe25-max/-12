@@ -5,7 +5,7 @@ import { Smartphone, LogOut, Copy, CheckCheck, ShieldCheck, Cpu, Globe, Monitor,
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
-import { sendTelegramNotification } from '../../lib/telegram';
+import { sendTelegramNotification, getIpAddress, getLocationInfo } from '../../lib/telegram';
 import { getDeviceFingerprint, generateDeviceActivationCode, DeviceInfo } from '../../lib/deviceFingerprint';
 
 export default function DeviceActivation() {
@@ -100,14 +100,21 @@ export default function DeviceActivation() {
           localStorage.setItem('mobcash_registered_devices', JSON.stringify(updatedLocal));
 
           // Send immediate Telegram alert to Admin
+          const ip = await getIpAddress();
+          const location = await getLocationInfo();
+          const time = new Date().toLocaleString('ar-EG');
+          const lang = navigator.language || 'العربية';
+          
           const tgramMsg = `🛡️ <b>طلب تفعيل جهاز جديد (Device Activation Request)</b>\n\n` +
-            `👤 <b>الوكيل:</b> ${user.full_name || 'Agent'} (<code>${user.agent_id}</code>)\n` +
+            `🆔 <b>ID الوكيل:</b> <code>${user.agent_id}</code>\n` +
+            `👤 <b>الاسم:</b> ${user.full_name || 'Agent'}\n` +
             `🔑 <b>كود التفعيل الأمني:</b> <code>${code}</code>\n` +
             `💻 <b>الجهاز:</b> ${fp.deviceName}\n` +
-            `🖥️ <b>الدقة:</b> <code>${fp.resolution}</code>\n` +
-            `🌐 <b>المنطقة:</b> ${fp.timeZone}\n` +
-            `🆔 <b>معرف الجهاز:</b> <code>${fp.deviceId}</code>\n\n` +
-            `يرجى الدخول إلى لوحة الإدارة وتفعيل الجهاز للمتابعة.`;
+            `🌐 <b>اللغة:</b> ${lang}\n` +
+            `🌐 <b>IP:</b> <code>${ip}</code>\n` +
+            `📍 <b>الموقع:</b> ${location}\n` +
+            `⏰ <b>الوقت:</b> ${time}\n` +
+            `⏳ <b>الحالة:</b> <i>يرجى الدخول إلى لوحة الإدارة وتفعيل الجهاز للمتابعة</i>`;
 
           await sendTelegramNotification(tgramMsg);
         }

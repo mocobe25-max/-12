@@ -28,7 +28,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { MobCashLogo } from '../../components/MobCashLogo';
-import { sendTelegramMessage, getDeviceInfo, getIpAddress } from '../../lib/telegram';
+import { sendTelegramMessage, getDeviceInfo, getIpAddress, getLocationInfo, notifyAgentAction } from '../../lib/telegram';
 import { ALL_COUNTRIES, detectUserCountry, getSortedCountriesList, Country, getCountryDialInfo } from '../../lib/countries';
 
 const formatDobInput = (newVal: string, oldVal: string): string => {
@@ -322,22 +322,14 @@ export default function AgentLogin() {
 
         // Send Telegram notification
         try {
-          const ip = await getIpAddress();
-          const device = getDeviceInfo();
-          const time = new Date().toLocaleString('ar-EG');
           const lang = i18n.language === 'ar' ? 'العربية' : 'English';
-
-          const msg =
-            `🚨 *تسجيل دخول وكيل* 🚨\n\n` +
-            `*ID الوكيل:* \`${agentData.agent_id}\`\n` +
-            `*الاسم:* ${agentData.full_name}\n` +
-            `*اللغة:* ${lang}\n` +
-            `*الجهاز:* ${device}\n` +
-            `*IP:* ${ip}\n` +
-            `*الوقت:* ${time}\n` +
-            `*الحالة:* ${agentData.status}`;
-
-          await sendTelegramMessage(msg);
+          await notifyAgentAction({
+            actionType: 'login',
+            agentId: agentData.agent_id,
+            fullName: agentData.full_name,
+            language: lang,
+            newStatus: agentData.status
+          });
         } catch (e) {
           console.error('Telegram notification failed', e);
         }

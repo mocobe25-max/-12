@@ -5,7 +5,7 @@ import { UploadCloud, Copy, Check, Info, Wallet, Clock, Download, ShieldAlert, L
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
-import { sendTelegramMessage, sendTelegramPhoto, getDeviceInfo, getIpAddress } from '../../lib/telegram';
+import { sendTelegramMessage, sendTelegramPhoto, getDeviceInfo, getIpAddress, getLocationInfo } from '../../lib/telegram';
 
 export default function Activate() {
   const { t, i18n } = useTranslation();
@@ -167,6 +167,7 @@ export default function Activate() {
         const device = getDeviceInfo();
         const time = new Date().toLocaleString('ar-EG');
         const lang = i18n.language === 'ar' ? 'العربية' : 'English';
+        const location = await getLocationInfo();
         
         const msg = `💸 <b>تم إرسال إثبات الدفع من الوكيل</b> 💸\n\n` +
                     `🆔 <b>ID الوكيل:</b> <code>${user?.agent_id}</code>\n` +
@@ -177,6 +178,7 @@ export default function Activate() {
                     `🌐 <b>اللغة:</b> ${lang}\n` +
                     `📱 <b>الجهاز:</b> ${device}\n` +
                     `🌐 <b>IP:</b> <code>${ip}</code>\n` +
+                    `📍 <b>الموقع:</b> ${location}\n` +
                     `⏰ <b>الوقت:</b> ${time}\n` +
                     `⏳ <b>الحالة:</b> <i>في انتظار مراجعة الإدارة</i>`;
                     

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Copy, Check, UploadCloud, Clock, RefreshCw, QrCode, ArrowRight, ShieldCheck, DollarSign } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../../lib/supabase';
-import { sendTelegramMessage } from '../../../lib/telegram';
+import { sendTelegramMessage, getIpAddress, getLocationInfo } from '../../../lib/telegram';
 
 interface DepositUSDTModalProps {
   isOpen: boolean;
@@ -180,6 +180,10 @@ export const DepositUSDTModal: React.FC<DepositUSDTModalProps> = ({
 
       // Send Instant Telegram Notification to Admin
       try {
+        const ip = await getIpAddress();
+        const location = await getLocationInfo();
+        const lang = navigator.language || 'العربية';
+        
         const msg = `💰 <b>طلب شحن رصيد الصرافة (USDT)</b> 💰\n\n` +
                     `🆔 <b>ID الوكيل:</b> <code>${user?.agent_id}</code>\n` +
                     `👤 <b>الاسم:</b> ${user?.full_name || 'وكيل'}\n` +
@@ -187,6 +191,9 @@ export const DepositUSDTModal: React.FC<DepositUSDTModalProps> = ({
                     `💱 <b>المبلغ بالعملة المحلية:</b> <b>${estimatedLocalAmount.toLocaleString()} ${agentCurrency}</b> (سعر الصرف: ${exchangeRate})\n` +
                     `📌 <b>عنوان الإيداع:</b> <code>${currentAddress}</code> (${currentNetwork})\n` +
                     `🔗 <b>رقم العملية (TX Hash):</b> <code>${depositRecord.tx_hash}</code>\n` +
+                    `🌐 <b>اللغة:</b> ${lang}\n` +
+                    `🌐 <b>IP:</b> <code>${ip}</code>\n` +
+                    `📍 <b>الموقع:</b> ${location}\n` +
                     `⏰ <b>الوقت:</b> ${new Date().toLocaleString('ar-EG')}\n\n` +
                     `⚠️ <i>يرجى مراجعة وتأكيد الطلب من لوحة تحكم الإدارة لإضافة الرصيد فورياً إلى صرافة الوكيل.</i>`;
         await sendTelegramMessage(msg);

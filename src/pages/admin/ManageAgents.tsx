@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users, Search, Edit2, Trash2, ShieldAlert, Eye, EyeOff, X, Clock, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { sendTelegramMessage } from '../../lib/telegram';
+import { sendTelegramMessage, notifyAgentAction } from '../../lib/telegram';
 import { useAuthStore } from '../../store/auth';
 
 export default function ManageAgents() {
@@ -85,16 +85,10 @@ export default function ManageAgents() {
       })
       .subscribe();
 
-    // 4. Background heartbeat refresh every 3 seconds
-    const interval = setInterval(() => {
-      fetchAgents();
-    }, 3000);
-
     return () => {
       if (bc) bc.close();
       window.removeEventListener('storage', onStorage);
       supabase.removeChannel(sub);
-      clearInterval(interval);
     };
   }, []);
 
@@ -105,7 +99,8 @@ export default function ManageAgents() {
         const { data, error } = await supabase
           .from('agents')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(300);
         if (!error && data) {
           supabaseAgents = data;
         }
@@ -228,14 +223,16 @@ export default function ManageAgents() {
           verified: '🔍 تم التحقق (Verified)',
           pending: '🕒 معلق أولي (Pending)'
         };
+        const oldStatusStr = agent?.status ? (statusMap[agent.status] || agent.status) : 'غير محدد';
+        const newStatusStr = statusMap[newStatus] || newStatus;
 
-        const msg = `🔄 <b>تحديث حالة الوكيل فوري</b> 🔄\n\n` +
-                    `🆔 <b>ID الوكيل:</b> <code>${agentId}</code>\n` +
-                    `👤 <b>الاسم:</b> ${agent?.full_name || 'وكيل'}\n` +
-                    `🏷️ <b>الحالة الجديدة:</b> <b>${statusMap[newStatus] || newStatus}</b>\n` +
-                    `⏰ <b>التاريخ:</b> ${new Date().toLocaleString('ar-EG')}\n` +
-                    `👮 <b>بواسطة:</b> الإدارة`;
-        await sendTelegramMessage(msg);
+        await notifyAgentAction({
+          actionType: 'status_change',
+          agentId: agentId,
+          fullName: agent?.full_name || 'وكيل',
+          oldStatus: oldStatusStr,
+          newStatus: newStatusStr,
+        });
       } catch (e) {
         console.error('Telegram notification failed', e);
       }

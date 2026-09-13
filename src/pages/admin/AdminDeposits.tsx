@@ -43,7 +43,8 @@ export default function AdminDeposits() {
       const { data } = await supabase
         .from('agent_deposits')
         .select('*, agents(full_name, currency, balance)')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(200);
 
       if (data && data.length > 0) {
         setDeposits(data);

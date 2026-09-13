@@ -1,6 +1,5 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 import { translations, baseEn, baseAr } from './locales/allLanguages';
 import { ensureLanguageTranslated } from './lib/autoTranslate';
 
@@ -56,15 +55,14 @@ export const resolveDeviceLanguage = (lng?: string | null): string => {
   return 'ar';
 };
 
-// Determine initial language: localStorage choice first, then device language
+// Determine initial language: localStorage choice first, then default to 'ar'
 const getInitialLanguage = (): string => {
   try {
     const saved = localStorage.getItem('i18nextLng');
     if (saved) {
       return resolveDeviceLanguage(saved);
     }
-    const deviceLang = (typeof navigator !== 'undefined' && (navigator.language || (navigator.languages && navigator.languages[0]))) || 'ar';
-    return resolveDeviceLanguage(deviceLang);
+    return 'ar';
   } catch {
     return 'ar';
   }
@@ -73,17 +71,11 @@ const getInitialLanguage = (): string => {
 const initialLang = getInitialLanguage();
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
     lng: initialLang,
     fallbackLng: 'ar',
-    detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      lookupLocalStorage: 'i18nextLng',
-      caches: ['localStorage'],
-    },
     interpolation: {
       escapeValue: false,
     },
@@ -95,9 +87,11 @@ ensureLanguageTranslated(i18n, currentLang);
 
 i18n.on('languageChanged', (lng) => {
   const resolved = resolveDeviceLanguage(lng);
+  localStorage.setItem('i18nextLng', resolved);
   applyLanguageDirection(resolved);
   ensureLanguageTranslated(i18n, resolved);
 });
+
 
 export default i18n;
 
