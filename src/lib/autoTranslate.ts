@@ -1,6 +1,6 @@
 import { baseEn } from '../locales/allLanguages';
 
-const CACHE_PREFIX = 'mobcash_tr_v5_';
+const CACHE_PREFIX = 'mobcash_tr_v6_';
 
 /**
  * Translates a batch of texts to the specified target language seamlessly using Google Translate API.
@@ -25,7 +25,7 @@ export async function autoTranslateLanguage(targetLang: string): Promise<Record<
   try {
     const keys = Object.keys(baseEn) as Array<keyof typeof baseEn>;
     const resultDict: Record<string, string> = {};
-    const DELIMITER = ' ::: ';
+    const DELIMITER = ' <sep> ';
     const apiLang = targetLang === 'zh-CN' ? 'zh-CN' : targetLang === 'zh-TW' ? 'zh-TW' : targetLang.split('-')[0];
 
     // Chunk size to prevent URL from getting too long for GET request
@@ -49,11 +49,12 @@ export async function autoTranslateLanguage(targetLang: string): Promise<Record<
       }
 
       const fullText = data[0].map((item: any) => item[0]).join('');
-      const parts = fullText.split(/\s*:::\s*/);
+      const parts = fullText.split(/\s*<sep>\s*/i);
 
       chunkKeys.forEach((key, idx) => {
         const translated = parts[idx]?.trim();
         if (translated) {
+          // Clean up any stray tags if needed, but it should be clean
           resultDict[key] = translated;
         }
       });

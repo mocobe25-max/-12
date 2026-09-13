@@ -306,7 +306,7 @@ export function AgentLayout() {
       subChannel.unsubscribe();
       clearInterval(interval);
     };
-  }, [user?.agent_id, user?.status, role]);
+  }, [user?.agent_id, role]); // Removed user?.status to prevent constant interval resetting when status changes
 
   // Standard route protection based on current status
   useEffect(() => {
