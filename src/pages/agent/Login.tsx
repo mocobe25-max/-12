@@ -289,6 +289,7 @@ export default function AgentLogin() {
     try {
       // 1. First attempt agent login by agent_id from Supabase, then local storage fallback
       let agentData: any = null;
+      
       try {
         const { data } = await supabase
           .from('agents')
@@ -300,13 +301,20 @@ export default function AgentLogin() {
         // ignore supabase error
       }
 
-      if (!agentData) {
-        try {
-          const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
-          agentData = localAgents.find((a: any) => a.agent_id === usernameInput);
-        } catch {
-          // ignore
+      // Always try to merge with local_registered_agents to restore missing schema columns (like agent_type, bank_name)
+      try {
+        const localAgents = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+        const localAgentData = localAgents.find((a: any) => a.agent_id === usernameInput);
+        
+        if (localAgentData) {
+          if (agentData) {
+            agentData = { ...localAgentData, ...agentData }; // Let Supabase override local for shared fields (like status, balance), but keep custom local fields
+          } else {
+            agentData = localAgentData;
+          }
         }
+      } catch {
+        // ignore
       }
 
       if (agentData && agentData.password_hash === passwordInput) {

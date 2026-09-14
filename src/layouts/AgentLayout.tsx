@@ -228,11 +228,19 @@ export function AgentLayout() {
 
     // 1. BroadcastChannel listener (instant cross-tab communication)
     let bc: BroadcastChannel | null = null;
+    let profileBc: BroadcastChannel | null = null;
     try {
       bc = new BroadcastChannel('agent_status_channel');
       bc.onmessage = (event) => {
         if (event.data && event.data.agent_id === user.agent_id) {
           handleNewStatus(event.data.status, event.data.record);
+        }
+      };
+      
+      profileBc = new BroadcastChannel('agent_profile_update');
+      profileBc.onmessage = (event) => {
+        if (event.data && event.data.agent_id === user.agent_id) {
+           useAuthStore.getState().updateUser(event.data);
         }
       };
     } catch (e) {

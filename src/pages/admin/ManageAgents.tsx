@@ -398,7 +398,45 @@ export default function ManageAgents() {
         }
       }
 
-      setAgents(agents.map(a => a.id === editingAgent.id ? { ...a, ...editForm } : a));
+      // 1. Update React State
+      const finalUpdatedAgent = { ...editingAgent, ...editForm };
+      setAgents(agents.map(a => a.id === editingAgent.id ? finalUpdatedAgent : a));
+
+      // 2. Persist to Local Storage to ensure custom fields (like agent_type, bank_name) are saved
+      try {
+        const local = JSON.parse(localStorage.getItem('local_registered_agents') || '[]');
+        const updatedLocal = local.map((a: any) => 
+          (a.id === editingAgent.id || a.agent_id === editingAgent.agent_id) ? { ...a, ...editForm } : a
+        );
+        
+        if (!updatedLocal.find((a: any) => a.id === editingAgent.id || a.agent_id === editingAgent.agent_id)) {
+           updatedLocal.push(finalUpdatedAgent);
+        }
+        
+        localStorage.setItem('local_registered_agents', JSON.stringify(updatedLocal));
+      } catch (err) {
+        console.warn('LocalStorage save error on edit:', err);
+      }
+
+      // 3. Update logged-in session if it's currently active in this browser
+      try {
+        const authSessionStr = localStorage.getItem('mobcash_auth_session');
+        if (authSessionStr) {
+          const authSession = JSON.parse(authSessionStr);
+          if (authSession?.state?.user && (authSession.state.user.id === editingAgent.id || authSession.state.user.agent_id === editingAgent.agent_id)) {
+             authSession.state.user = { ...authSession.state.user, ...editForm };
+             localStorage.setItem('mobcash_auth_session', JSON.stringify(authSession));
+          }
+        }
+      } catch (e) {}
+
+      // 4. Broadcast the update to other tabs (for live agent sessions)
+      try {
+        const bc = new BroadcastChannel('agent_profile_update');
+        bc.postMessage({ agent_id: editingAgent.agent_id, ...editForm });
+        setTimeout(() => bc.close(), 200);
+      } catch (e) {}
+
       setEditingAgent(null);
     } catch (error: any) {
       console.error('Error updating agent:', error);
