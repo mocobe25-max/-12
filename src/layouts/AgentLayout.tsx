@@ -154,6 +154,7 @@ export function AgentLayout() {
       if (!newStatus) return;
 
       const currentAuthUser = useAuthStore.getState().user;
+      if (!currentAuthUser) return;
       const currentStatus = currentAuthUser?.status;
       const currentPath = window.location.pathname;
 

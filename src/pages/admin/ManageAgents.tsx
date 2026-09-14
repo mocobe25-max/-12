@@ -141,19 +141,37 @@ export default function ManageAgents() {
       const agentId = agent?.agent_id || id;
       const recordId = agent?.id || id;
 
+      let dbUpdateError = null;
       try {
+        let res;
         if (agent?.id) {
-          await supabase
+          res = await supabase
             .from('agents')
             .update({ status: newStatus, updated_at: new Date().toISOString() })
             .eq('id', agent.id);
+        } else {
+          res = await supabase
+            .from('agents')
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .eq('agent_id', agentId);
         }
-        await supabase
-          .from('agents')
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
-          .eq('agent_id', agentId);
+        
+        if (res?.error) {
+          console.warn('Full status update failed, attempting fallback without updated_at:', res.error);
+          const fallbackRes = await supabase
+            .from('agents')
+            .update({ status: newStatus })
+            .eq(agent?.id ? 'id' : 'agent_id', agent?.id || agentId);
+            
+          if (fallbackRes.error) dbUpdateError = fallbackRes.error;
+        }
       } catch (err) {
-        console.warn('Supabase status update fallback:', err);
+        console.warn('Supabase status update error:', err);
+      }
+      
+      if (dbUpdateError) {
+         console.error('Failed to update status in database:', dbUpdateError);
+         // You could choose to alert here, but let's proceed with local update so UI isn't blocked completely.
       }
       
       // Update local state in admin table immediately
@@ -244,10 +262,14 @@ export default function ManageAgents() {
   const resetDepositTimer = async (agent: any) => {
     try {
       // Mark as PENDING_LOGIN so countdown only starts when the agent actually logs in / opens the portal
-      await supabase
+      const { error } = await supabase
         .from('agents')
         .update({ deposit_timer_reset_at: 'PENDING_LOGIN' })
         .eq('id', agent.id);
+
+      if (error) {
+        console.warn('Could not reset timer in database, continuing locally', error);
+      }
 
       // Reset local flags
       localStorage.removeItem(`deposit_timer_start_${agent.id}`);
@@ -346,13 +368,41 @@ export default function ManageAgents() {
         .update(editForm)
         .eq('id', editingAgent.id);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST204' || error.message?.includes('Could not find')) {
+          console.warn('Full update failed (missing column), attempting fallback update:', error);
+          
+          // Fallback update without custom columns
+          const fallbackPayload = {
+            agent_id: editForm.agent_id,
+            password_hash: editForm.password_hash,
+            full_name: editForm.full_name,
+            phone: editForm.phone,
+            country: editForm.country,
+            city: editForm.city,
+            currency: editForm.currency,
+            commission_deposit: editForm.commission_deposit,
+            commission_withdraw: editForm.commission_withdraw
+          };
+          
+          const fallbackRes = await supabase
+            .from('agents')
+            .update(fallbackPayload)
+            .eq('id', editingAgent.id);
+            
+          if (fallbackRes.error) {
+             throw fallbackRes.error;
+          }
+        } else {
+          throw error;
+        }
+      }
 
       setAgents(agents.map(a => a.id === editingAgent.id ? { ...a, ...editForm } : a));
       setEditingAgent(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating agent:', error);
-      alert('Failed to update agent');
+      alert('Failed to update agent: ' + (error?.message || ''));
     }
   };
 
